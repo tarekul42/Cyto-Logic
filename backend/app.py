@@ -1,10 +1,8 @@
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-from compiler.lexer import BioLexer
-from compiler.parser import BioParser
-from compiler.gate_mapper import BioGateMapper
 from compiler.parts_db import GATES_DB, BIOMOLECULES, REPORTERS
 from compiler.backends.registry import get as get_backend
+from compiler.pipeline import CompilerPipeline
 
 app = Flask(__name__)
 CORS(app)
@@ -114,7 +112,6 @@ def process_circuit_compilation():
         }), 400
 
     try:
-        from compiler.pipeline import CompilerPipeline
         pipeline = CompilerPipeline()
         cir, messages = pipeline.run(statement)
 
