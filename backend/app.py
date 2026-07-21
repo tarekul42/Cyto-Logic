@@ -122,28 +122,12 @@ def process_circuit_compilation():
         syntax_tree = parser_engine.parse()
 
         mapping_engine = BioGateMapper()
-        synthesis_result = mapping_engine.map_circuit(syntax_tree)
+        cir = mapping_engine.map_circuit(syntax_tree, logic_statement=statement)
 
-        if synthesis_result is None:
-            return jsonify({
-                "success": False,
-                "error": "Compiler produced no output from the given input."
-            }), 400
+        api_response = cir.to_api_response()
+        api_response["success"] = True
 
-        nodes_dict = synthesis_result.get("circuit_structure", {})
-        edges_list = synthesis_result.get("connections", [])
-
-        return jsonify({
-            "success": True,
-            "logic": statement,
-            "parts": synthesis_result.get("dna_parts_list", []),
-            "complexity_score": synthesis_result.get("complexity", 0),
-            "output_protein": payload.get('output_protein', 'GFP'),
-            "graph": {
-                "nodes": list(nodes_dict.items()),
-                "edges": edges_list
-            }
-        })
+        return jsonify(api_response)
 
     except SyntaxError as syn_ex:
         return jsonify({

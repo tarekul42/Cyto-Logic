@@ -12,6 +12,9 @@ class CircuitIR:
         entry.update(extra)
         self._nodes[node_id] = entry
 
+    def set_node(self, node_id, entry):
+        self._nodes[node_id] = entry
+
     def get_node(self, node_id):
         return self._nodes.get(node_id)
 
