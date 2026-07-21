@@ -1,14 +1,33 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import CircuitCanvas from './components/CircuitCanvas';
 import PartsPanel from './components/PartsPanel';
+import CircuitsPanel from './components/CircuitsPanel';
 import OutputPanel from './components/OutputPanel';
+import { ToastProvider } from './components/Toast';
 import { theme } from './theme';
 
 export default function App() {
   const [result, setResult] = useState(null);
+  const [circuitKey, setCircuitKey] = useState(0);
+  const [loadedCircuit, setLoadedCircuit] = useState(null);
+  const circuitRef = useRef({ nodes: [], edges: [] });
+
+  const handleCircuitChange = useCallback((nodes, edges) => {
+    circuitRef.current = { nodes, edges }
+  }, []);
+
+  const handleLoadCircuit = useCallback((nodes, edges) => {
+    setLoadedCircuit({ nodes, edges })
+    setCircuitKey((k) => k + 1)
+  }, []);
+
+  const handleSaveCircuit = useCallback((name) => {
+    return circuitRef.current
+  }, []);
 
   return (
+    <ToastProvider>
     <div style={{
       display: 'flex',
       height: '100vh',
@@ -44,11 +63,21 @@ export default function App() {
           </span>
         </div>
         <PartsPanel />
+        <CircuitsPanel
+          nodes={circuitRef.current.nodes}
+          edges={circuitRef.current.edges}
+          onLoad={handleLoadCircuit}
+        />
       </div>
 
       <div style={{ flex: 1, position: 'relative', background: theme.color.canvas }}>
         <ReactFlowProvider>
-          <CircuitCanvas onResult={setResult} />
+          <CircuitCanvas
+            key={circuitKey}
+            loadedCircuit={loadedCircuit}
+            onCircuitChange={handleCircuitChange}
+            onResult={setResult}
+          />
         </ReactFlowProvider>
       </div>
 
@@ -74,5 +103,6 @@ export default function App() {
         <OutputPanel result={result} />
       </div>
     </div>
+    </ToastProvider>
   );
 }

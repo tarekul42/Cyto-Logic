@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ReactFlowProvider } from 'reactflow'
 import CircuitCanvas from '../components/CircuitCanvas'
+import { ToastProvider } from '../components/Toast'
 import * as api from '../api/compilerApi'
 
 vi.mock('../api/compilerApi', () => ({
@@ -10,7 +11,7 @@ vi.mock('../api/compilerApi', () => ({
 }))
 
 function renderInFlow(ui) {
-  return render(<ReactFlowProvider>{ui}</ReactFlowProvider>)
+  return render(<ReactFlowProvider><ToastProvider>{ui}</ToastProvider></ReactFlowProvider>)
 }
 
 describe('CircuitCanvas', () => {

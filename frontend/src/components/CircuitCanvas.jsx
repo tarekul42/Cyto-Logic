@@ -11,7 +11,9 @@ import '@reactflow/core/dist/style.css';
 import GateNode from './GateNode';
 import { compileFromGraph } from '../api/compilerApi';
 import { theme, gateConfig } from '../theme';
+import { useToast } from './Toast';
 
+const MAX_HISTORY = 50
 const nodeTypes = { gateNode: GateNode };
 
 const initialNodes = [
@@ -38,16 +40,71 @@ const btnBase = {
   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
 };
 
-export default function CircuitCanvas({ onResult }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult }) {
+  const startNodes = loadedCircuit ? loadedCircuit.nodes : initialNodes;
+  const startEdges = loadedCircuit ? loadedCircuit.edges : initialEdges;
+  const [nodes, setNodes, onNodesChange] = useNodesState(startNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(startEdges);
   const [isCompiling, setIsCompiling] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [compileStatus, setCompileStatus] = useState('idle');
+  const toast = useToast();
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapper = useRef(null);
+  const history = useRef({ past: [], future: [] });
+
+  useEffect(() => {
+    onCircuitChange?.(nodes, edges)
+  }, [nodes, edges, onCircuitChange])
+
+  const pushHistory = useCallback(() => {
+    const h = history.current
+    h.past.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
+    if (h.past.length > MAX_HISTORY) h.past.shift()
+    h.future = []
+  }, [nodes, edges])
+
+  const undo = useCallback(() => {
+    const h = history.current
+    if (h.past.length === 0) return
+    h.future.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
+    const prev = h.past.pop()
+    setNodes(prev.nodes)
+    setEdges(prev.edges)
+    toast('Undo', 'info', 1500)
+  }, [nodes, edges, setNodes, setEdges, toast])
+
+  const redo = useCallback(() => {
+    const h = history.current
+    if (h.future.length === 0) return
+    h.past.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
+    const next = h.future.pop()
+    setNodes(next.nodes)
+    setEdges(next.edges)
+    toast('Redo', 'info', 1500)
+  }, [nodes, edges, setNodes, setEdges, toast])
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault()
+        redo()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        compileRef.current()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo, redo])
 
   const handleLabelChange = useCallback((nodeId, newLabel) => {
+    pushHistory()
     setNodes((nds) =>
       nds.map((n) =>
         n.id === nodeId
@@ -55,7 +112,7 @@ export default function CircuitCanvas({ onResult }) {
           : n
       )
     );
-  }, [setNodes]);
+  }, [setNodes, pushHistory]);
 
   const nodesWithCallbacks = useMemo(
     () => nodes.map((n) => ({
@@ -72,39 +129,35 @@ export default function CircuitCanvas({ onResult }) {
       const result = await compileFromGraph(nodes, edges);
       onResult(result);
       setCompileStatus('success');
+      toast('Circuit compiled successfully', 'success');
       setTimeout(() => setCompileStatus('idle'), 1500);
     } catch (err) {
       onResult({ success: false, error: err.message || 'Compilation failed' });
       setCompileStatus('error');
+      toast('Compilation failed', 'error');
       setTimeout(() => setCompileStatus('idle'), 2000);
     } finally {
       setIsCompiling(false);
     }
-  }, [nodes, edges, onResult]);
+  }, [nodes, edges, onResult, toast]);
 
   const compileRef = useRef(handleCompile);
   compileRef.current = handleCompile;
 
-  useEffect(() => {
-    const handler = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        compileRef.current();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
   const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
-    [setEdges]
+    (params) => {
+      pushHistory()
+      setEdges((eds) => addEdge({ ...params, animated: true }, eds))
+    },
+    [setEdges, pushHistory]
   );
 
   const handleClearConfirm = () => {
+    pushHistory()
     setNodes([]);
     setEdges([]);
     setConfirmClear(false);
+    toast('Circuit cleared', 'info');
   };
 
   const onDrop = useCallback((event) => {
@@ -117,7 +170,8 @@ export default function CircuitCanvas({ onResult }) {
       y: event.clientY,
     });
 
-    const newNode = {
+    pushHistory()
+    setNodes((nds) => nds.concat({
       id: `node_${Date.now()}`,
       type: 'gateNode',
       position,
@@ -125,10 +179,8 @@ export default function CircuitCanvas({ onResult }) {
         type,
         label: type === 'INPUT' ? 'Input' : type === 'OUTPUT' ? 'Output' : `${type} Gate`,
       },
-    };
-
-    setNodes((nds) => nds.concat(newNode));
-  }, [setNodes, reactFlowInstance]);
+    }));
+  }, [setNodes, reactFlowInstance, pushHistory]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -155,21 +207,57 @@ export default function CircuitCanvas({ onResult }) {
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setConfirmClear(true)}
-            style={{
-              ...btnBase,
-              background: 'transparent',
-              border: `1px solid ${theme.color.borderLight}`,
-              padding: '6px 14px',
-              fontSize: theme.size.font.small,
-              color: theme.color.textSecondary,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
-          >
-            + New Circuit
-          </button>
+          <>
+            <button
+              onClick={() => setConfirmClear(true)}
+              style={{
+                ...btnBase,
+                background: 'transparent',
+                border: `1px solid ${theme.color.borderLight}`,
+                padding: '6px 14px',
+                fontSize: theme.size.font.small,
+                color: theme.color.textSecondary,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
+            >
+              + New Circuit
+            </button>
+            <button
+              onClick={undo}
+              title="Undo (Ctrl+Z)"
+              style={{
+                ...btnBase,
+                background: 'transparent',
+                border: `1px solid ${theme.color.borderLight}`,
+                padding: '6px 10px',
+                fontSize: theme.size.font.badge,
+                color: theme.color.textTertiary,
+                fontFamily: theme.font.mono,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
+            >
+              &#x21A9;
+            </button>
+            <button
+              onClick={redo}
+              title="Redo (Ctrl+Shift+Z)"
+              style={{
+                ...btnBase,
+                background: 'transparent',
+                border: `1px solid ${theme.color.borderLight}`,
+                padding: '6px 10px',
+                fontSize: theme.size.font.badge,
+                color: theme.color.textTertiary,
+                fontFamily: theme.font.mono,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
+            >
+              &#x21AA;
+            </button>
+          </>
         )}
       </div>
 

@@ -3,6 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { simulateCircuit } from '../api/compilerApi';
+import { useToast } from './Toast';
 import { theme } from '../theme';
 
 const COLORS = ['#00d4aa', '#4a8fe7', '#f39c12', '#e74c5e', '#a78bfa', '#fb923c'];
@@ -14,6 +15,7 @@ export default function SimulationPanel({ logic }) {
   const [tStart, setTStart] = useState(0);
   const [tEnd, setTEnd] = useState(100);
   const [dt, setDt] = useState(1.0);
+  const toast = useToast();
 
   const handleSimulate = async () => {
     if (!logic) return;
@@ -23,11 +25,14 @@ export default function SimulationPanel({ logic }) {
       const result = await simulateCircuit(logic, {}, [Number(tStart), Number(tEnd)], Number(dt));
       if (result.success === false) {
         setError(result.error || 'Simulation failed');
+        toast('Simulation failed', 'error');
       } else {
         setSimResult(result);
+        toast('Simulation complete', 'success');
       }
     } catch (err) {
       setError(err.message || 'Simulation request failed');
+      toast('Simulation request failed', 'error');
     } finally {
       setIsSimulating(false);
     }

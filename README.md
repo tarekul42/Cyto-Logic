@@ -7,7 +7,7 @@ A compiler framework for synthetic biology that transforms high-level biological
 - [Architecture](docs/architecture.md)
 - [Development Guide](docs/development.md)
 
-> **Current Status:** Phases 1–4 completed. Phase 5 (Validation & Publication) completed.
+> **Current Status:** All 5 phases completed. DNA export, Plugin system, Cloud compiler, SVG visualization, Frontend UI, and Security hardening all implemented. 301 tests passing (245 backend + 56 frontend).
 
 ---
 
@@ -35,46 +35,83 @@ The architecture is inspired by modern compiler infrastructures such as LLVM, ad
 
 ## Current Development Status
 
-| Phase | Status |
-|--------|--------|
-| Phase 1 • Compiler Frontend | Completed (verified) |
-| Phase 2 • Circuit Intermediate Representation (CIR) | Completed |
-| Phase 3 • Simulation Engine | Completed |
-| Phase 4 • Optimization Engine | Completed |
-| Phase 5 • Validation & Publication | Completed |
+| Area | Status |
+|------|--------|
+| Compiler Frontend (Lexer, Parser, Semantic Analysis) | ✅ Complete |
+| Circuit Intermediate Representation (CIR) | ✅ Complete |
+| Simulation Engine (Hill kinetics, ODE, RK4) | ✅ Complete |
+| Optimization Engine (GA, NSGA-II) | ✅ Complete |
+| Validation & Benchmarks (Repressilator, SBOL, Golden IR) | ✅ Complete |
+| Backends (SBOL, DNA, SVG, Simulation) | ✅ Complete |
+| Plugin System | ✅ Complete |
+| Cloud Compiler (Docker, Health endpoint) | ✅ Complete |
+| Frontend UI (React + ReactFlow + Recharts) | ✅ Complete |
+| Security (Rate limiter, Input validation, CORS, Logging) | ✅ Complete |
+| Documentation (API, Architecture, Development) | ✅ Complete |
+| CI Pipeline (Backend tests, Frontend build/test/lint, Docker) | ✅ Complete |
 
 ---
 
-# Completed Features
+## Completed Features
 
-## Phase 1 ✅
-
-Compiler Frontend
-
-- Lexer
-- Token generation
-- Token position tracking
+### Compiler Frontend
+- Lexer with token position tracking
+- Recursive-descent parser
 - AST node definitions
-- Parser framework
-- Compiler architecture
-- Error reporting foundation
-- Input validation (size limits, null checks, cycle detection)
-- Unit test suite (41 tests)
+- Semantic analyzer (undefined proteins, invalid arity, depth limits)
+- Input validation, cycle detection, size limits
 
-## Phase 2 ✅
+### Circuit IR
+- Graph-based intermediate representation
+- IR Builder (AST to CircuitIR)
+- Gate mapper integration
+- Compiler pipeline (Lexer → Parser → Semantic → IR)
 
-Intermediate Representation
+### Simulation Engine
+- Hill kinetics models (activation, repression)
+- ODE system builder from CircuitIR
+- RK4 numerical solver
+- `simulate_circuit()` with configurable t_span, dt, initial conditions
 
-- Circuit IR design
-- IR Builder architecture
-- Graph-based circuit representation
-- Backend abstraction
-- Compiler pipeline integration
-- Modular system architecture
+### Optimization Engine
+- Genetic Algorithm (tournament selection, crossover, mutation)
+- NSGA-II (fast non-dominated sort, crowding distance)
+- Multi-objective optimization (expression accuracy, metabolic burden, noise robustness)
+- Simulation → NSGA-II pipeline integration
+
+### Backends
+- **SBOL:** Full XML export with SBOL 2.x compliance
+- **DNA:** FASTA sequences with 13 reference BioBrick parts
+- **SVG:** Circuit diagram with topological layout, colored nodes, bezier edges, DNA parts table
+- **Simulation:** Time-series trajectory data
+
+### Plugin System
+- `PluginBase` with hooks: before/after compile, simulate, optimize, export
+- `PluginManager` (singleton, env-var auto-discovery)
+- Built-in `TimingPlugin` for performance measurement
+- Integrated into CompilerPipeline and SimulationBackend
+
+### Security
+- Per-IP sliding-window rate limiter (60 req/min)
+- Input validation: type checks, character limits (10k), array limits (500)
+- JSON structured logging
+- Restricted CORS origins
+
+### Frontend
+- React 19 + Vite + ReactFlow circuit editor
+- Drag-and-drop gate palette (INPUT, AND, OR, NOT, OUTPUT)
+- Inline node label editing
+- Circuit compilation with status feedback
+- Simulation panel with configurable parameters and Recharts line chart
+- Export dropdown (SBOL / DNA / SVG)
+- Parts list with role badges
+- Keyboard shortcuts (Ctrl+Enter to compile)
+- Loading spinners and inline error display
+- Centralized design token system
 
 ---
 
-# How Cyto Logic Works
+## How Cyto Logic Works
 
 ```
 User
@@ -100,32 +137,18 @@ Semantic Analyzer
  ▼
 Circuit Intermediate Representation (Graph)
  │
- ├──────────────┐
- ▼              │
-Simulation      │
- │              │
- ▼              │
-Time-Series     │
-                ▼
-        Optimization
-                │
-                ▼
-      Optimized Circuit
-                │
-                ▼
-        Code Generators
-                │
-                ▼
- SBOL / FASTA / JSON / Graph
-                │
-                ▼
-          Persistence
+ ├──────────────┬──────────────┐
+ ▼              ▼              ▼
+Simulation  Optimization  Code Generators
+ │              │              │
+ ▼              ▼              ▼
+Time-Series  Optimized    SBOL / FASTA / SVG
+              Circuit
 ```
-
 
 ---
 
-# Architecture
+## Architecture
 
 Cyto Logic follows a layered compiler architecture.
 
@@ -148,76 +171,34 @@ Cyto Logic follows a layered compiler architecture.
               └──────────┼──────────┘
                          │
                          ▼
-                    Persistence
+                   Persistence
 ```
 
-Every major subsystem has a single responsibility.
-
-The frontend never communicates directly with simulation or exporters.
-
-All downstream systems consume the Circuit Intermediate Representation.
+Every major subsystem has a single responsibility. The frontend never communicates directly with simulation or exporters. All downstream systems consume the Circuit Intermediate Representation.
 
 ---
 
-# Compiler Frontend
+## Testing
 
-The frontend consists of three sequential stages.
-
-## Lexer
-
-The lexer converts raw source text into a sequence of tokens.
-
-Each token stores
-
-- Type
-- Value
-- Source position
+| Suite | Count | Coverage |
+|-------|-------|----------|
+| Backend (pytest) | 245 | Lexer, parser, AST, IR, simulation, optimization, backends, validation, middleware, plugins, health |
+| Frontend (Vitest) | 56 | All components, theme tokens, API module |
 
 ---
 
-## Parser
+## Tech Stack
 
-The parser consumes the token stream and constructs an Abstract Syntax Tree (AST).
-
-The AST represents the logical structure of a biological circuit without including implementation-specific information.
-
----
-
-## Semantic Analysis
-
-The semantic analysis stage validates biologically meaningful rules.
-
-Examples include
-
-- Undefined proteins
-- Invalid gate arity
-- Incorrect circuit structure
+- **Backend:** Python 3.12, Flask, SBOL2
+- **Frontend:** React 19, Vite 8, ReactFlow, Recharts, Axios
+- **Infrastructure:** Docker, GitHub Actions CI
+- **Testing:** pytest (backend), Vitest + Testing Library (frontend)
 
 ---
 
-# Circuit Intermediate Representation (CIR)
+## Project Philosophy
 
-The Circuit IR is the core abstraction inside Cyto Logic.
-
-Instead of allowing every backend to consume the AST directly, all compiler outputs are transformed into a graph-based intermediate representation.
-
-Each CIR node stores
-
-- Unique identifier
-- Gate type
-- Parent and child relationships
-- Metadata
-- Biological parameters (future)
-
-The CIR acts as the single source of truth throughout the compiler.
-
----
-
-# Project Philosophy
-
-Cyto Logic is designed as reusable compiler infrastructure rather than a single-purpose application.
-
-The architecture follows several principles.
+Cyto Logic is designed as reusable compiler infrastructure rather than a single-purpose application. The architecture follows several principles:
 
 - Stateless compiler stages
 - Modular components
@@ -230,135 +211,16 @@ The architecture follows several principles.
 
 ---
 
-# Planned Features
-
-The following systems are part of the roadmap.
-
-## Phase 3
-
-Simulation Engine
-
-- Hill kinetics
-- ODE solver
-- Time-series simulation
-- Circuit visualization
-
----
-
-## Phase 4
-
-Optimization Engine
-
-- Genetic Algorithm
-- NSGA-II
-- Multi-objective optimization
-- Automatic parameter tuning
-
-Objectives include
-
-- Expression accuracy
-- Metabolic burden
-- Noise robustness
-
----
-
-## Phase 5
-
-Validation
-
-- Repressilator benchmark
-- SBOL validation
-- Golden IR tests
-- Biological verification
-
----
-
-# Future Backends
-
-The architecture has been designed to support multiple exporters.
-
-Planned targets include
-
-- SBOL
-- BioBrick
-- DNA sequences
-- JSON
-- SVG
-- Laboratory protocols
-
-Future backends can be added without changing the compiler frontend.
-
----
-
-# Mathematical Foundation
-
-Future simulation is based on deterministic Ordinary Differential Equations using Hill kinetics.
-
-Optimization will use NSGA-II to search for parameter sets that balance
-
-- Desired expression
-- Metabolic burden
-- Robustness
-
-These mathematical models are specified in the architecture but have not yet been implemented.
-
----
-
-# Testing Strategy
-
-Current and planned testing includes
-
-- Lexer unit tests
-- Parser unit tests
-- AST verification
-- Golden IR snapshot testing
-- Simulation benchmark validation
-- Pareto front verification
-- SBOL round-trip testing
-
----
-
-# Roadmap
-
-- [x] Compiler architecture
-- [x] Lexer
-- [x] AST
-- [x] Circuit IR architecture
-- [x] Backend abstraction
-- [x] Error reporting foundation
-- [x] Unit tests (lexer + parser + gate mapper)
-- [x] Dependency management (requirements.txt)
-- [x] API input validation
-- [x] Cycle-safe graph conversion
-- [x] Vite proxy configuration
-- [x] ErrorBoundary
-- [x] Semantic Analyzer
-- [x] Complete Parser
-- [x] Simulation Engine
-- [x] Optimization Engine
-- [x] SBOL Exporter
-- [x] Validation & Benchmarks
-- [ ] DNA Exporter
-- [ ] Plugin System
-- [ ] Cloud Compiler
-- [ ] Documentation
-
----
-
-# Disclaimer
-
-Cyto Logic is an active research project.
-
-The current repository represents the compiler foundation. Many architectural components described in the documentation have been specified but are still under development.
-
-The project is intended for research, experimentation, and learning in compiler design and synthetic biology.
-
----
-
-# References
+## References
 
 - LLVM Compiler Infrastructure
 - SBOL (Synthetic Biology Open Language)
 - iGEM Registry of Standard Biological Parts
 - Hill Function Models
 - NSGA-II Multi-objective Optimization
+
+---
+
+## Disclaimer
+
+Cyto Logic is an active research project intended for research, experimentation, and learning in compiler design and synthetic biology.

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import * as api from '../api/compilerApi'
 import SimulationPanel from '../components/SimulationPanel'
+import { ToastProvider } from '../components/Toast'
 
 vi.mock('../api/compilerApi', () => ({
   simulateCircuit: vi.fn(),
@@ -13,23 +14,27 @@ describe('SimulationPanel', () => {
     vi.clearAllMocks()
   })
 
+  function renderWithToast(ui) {
+    return render(<ToastProvider>{ui}</ToastProvider>)
+  }
+
   it('renders Run Simulation button', () => {
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     expect(screen.getByText('Run Simulation')).toBeInTheDocument()
   })
 
   it('disables button when no logic provided', () => {
-    render(<SimulationPanel logic={null} />)
+    renderWithToast(<SimulationPanel logic={null} />)
     expect(screen.getByText('Run Simulation')).toBeDisabled()
   })
 
   it('shows empty state when no result', () => {
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     expect(screen.getByText('Run a simulation to see time-series data')).toBeInTheDocument()
   })
 
   it('renders t_span and dt inputs', () => {
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     const inputs = document.querySelectorAll('input[type="number"]')
     expect(inputs.length).toBeGreaterThanOrEqual(3)
   })
@@ -42,7 +47,7 @@ describe('SimulationPanel', () => {
       species: ['GFP'], num_points: 3,
     })
 
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     await user.click(screen.getByText('Run Simulation'))
 
     expect(api.simulateCircuit).toHaveBeenCalledWith(
@@ -54,7 +59,7 @@ describe('SimulationPanel', () => {
     const user = userEvent.setup()
     api.simulateCircuit.mockRejectedValue(new Error('Network error'))
 
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     await user.click(screen.getByText('Run Simulation'))
 
     expect(await screen.findByText(/Network error/)).toBeInTheDocument()
@@ -66,7 +71,7 @@ describe('SimulationPanel', () => {
       success: false, error: 'Simulation diverged',
     })
 
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     await user.click(screen.getByText('Run Simulation'))
 
     expect(await screen.findByText('Simulation diverged')).toBeInTheDocument()
@@ -80,7 +85,7 @@ describe('SimulationPanel', () => {
       species: ['GFP'], num_points: 3,
     })
 
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
     await user.click(screen.getByText('Run Simulation'))
 
     expect(await screen.findByText(/Time-series/)).toBeInTheDocument()
@@ -95,7 +100,7 @@ describe('SimulationPanel', () => {
       species: ['GFP'], num_points: 2,
     })
 
-    render(<SimulationPanel logic="A AND B" />)
+    renderWithToast(<SimulationPanel logic="A AND B" />)
 
     const inputs = document.querySelectorAll('input[type="number"]')
     const tStart = inputs[0]

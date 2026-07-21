@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { exportSBOL, exportDNA, exportSVG } from '../api/compilerApi';
 import SimulationPanel from './SimulationPanel';
+import { useToast } from './Toast';
 import { theme } from '../theme';
 
 const roleColors = {
@@ -28,6 +29,7 @@ export default function OutputPanel({ result }) {
   const [exportError, setExportError] = useState(null);
   const [activeTab, setActiveTab] = useState('parts');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const toast = useToast();
 
   if (!result) {
     return (
@@ -72,9 +74,11 @@ export default function OutputPanel({ result }) {
     setShowExportMenu(false);
     try {
       await exportFn();
+      toast(`${label} exported`, 'success');
     } catch (error) {
       console.error(`${label} export failed:`, error);
       setExportError(`${label} export failed. Check if backend is running.`);
+      toast(`${label} export failed`, 'error');
     } finally {
       setIsExporting(null);
     }
