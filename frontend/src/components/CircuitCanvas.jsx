@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import ReactFlow, {
   addEdge,
   useNodesState,
   useEdgesState,
   useReactFlow,
-  Controls,
   Background,
   MiniMap,
 } from 'reactflow';
@@ -31,48 +30,29 @@ export default function CircuitCanvas({ onResult }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isCompiling, setIsCompiling] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapper = useRef(null);
 
-  useEffect(() => {
-    document.body.style.margin = "0";
-    document.body.style.padding = "0";
-    document.body.style.overflow = "hidden";
-    document.body.style.backgroundColor = "#f8f9fa";
-  }, []);
-
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
-    [setEdges]
-  );
-
-  const onNodeDoubleClick = useCallback((event, node) => {
-    const currentLabel = node.data.label;
-    const newLabel = prompt(`Modify label/protein name for this ${node.data.type} node:`, currentLabel);
-
-    if (newLabel && newLabel.trim() !== "") {
-      setNodes((nds) =>
-        nds.map((n) => {
-          if (n.id === node.id) {
-            return {
-              ...n,
-              data: { ...n.data, label: newLabel.trim() }
-            };
-          }
-          return n;
-        })
-      );
-    }
+  const handleLabelChange = useCallback((nodeId, newLabel) => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? { ...n, data: { ...n.data, label: newLabel } }
+          : n
+      )
+    );
   }, [setNodes]);
 
-  const handleClearCanvas = () => {
-    if (window.confirm("Are you sure you want to delete the whole circuit and start fresh?")) {
-      setNodes([]);
-      setEdges([]);
-    }
-  };
+  const nodesWithCallbacks = useMemo(
+    () => nodes.map((n) => ({
+      ...n,
+      data: { ...n.data, onLabelChange: handleLabelChange },
+    })),
+    [nodes, handleLabelChange]
+  );
 
-  const handleCompile = async () => {
+  const handleCompile = useCallback(async () => {
     setIsCompiling(true);
     try {
       const result = await compileFromGraph(nodes, edges);
@@ -82,6 +62,31 @@ export default function CircuitCanvas({ onResult }) {
     } finally {
       setIsCompiling(false);
     }
+  }, [nodes, edges, onResult]);
+
+  const compileRef = useRef(handleCompile);
+  compileRef.current = handleCompile;
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        compileRef.current();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
+    [setEdges]
+  );
+
+  const handleClearConfirm = () => {
+    setNodes([]);
+    setEdges([]);
+    setConfirmClear(false);
   };
 
   const onDrop = useCallback((event) => {
@@ -112,24 +117,33 @@ export default function CircuitCanvas({ onResult }) {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  const btnBase = {
+    color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer',
+    fontSize: 13, fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+  };
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: '#0e2439' }} ref={reactFlowWrapper}>
-
-      <div style={{ position: 'absolute', top: 15, left: 15, zIndex: 10 }}>
-        <button
-          onClick={handleClearCanvas}
-          style={{
-            background: '#ff4d4d', color: 'white', border: 'none',
-            padding: '8px 16px', borderRadius: 6, cursor: 'pointer',
-            fontSize: 15, fontWeight: 600, boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-          }}
-        >
-          Create New Logic
-        </button>
+      <div style={{ position: 'absolute', top: 15, left: 15, zIndex: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+        {confirmClear ? (
+          <>
+            <span style={{ fontSize: 13, color: '#ccc' }}>Clear all?</span>
+            <button onClick={handleClearConfirm} style={{ ...btnBase, background: '#ff4d4d', padding: '6px 12px' }}>
+              Yes, clear
+            </button>
+            <button onClick={() => setConfirmClear(false)} style={{ ...btnBase, background: '#555', padding: '6px 12px' }}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button onClick={() => setConfirmClear(true)} style={{ ...btnBase, background: '#ff4d4d', padding: '8px 16px', fontSize: 15 }}>
+            Create New Logic
+          </button>
+        )}
       </div>
 
       <ReactFlow
-        nodes={nodes}
+        nodes={nodesWithCallbacks}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
@@ -137,33 +151,28 @@ export default function CircuitCanvas({ onResult }) {
         onDrop={onDrop}
         onDragOver={onDragOver}
         nodeTypes={nodeTypes}
-        onNodeDoubleClick={onNodeDoubleClick}
         deleteKeyCode={["Delete", "Backspace"]}
         fitView
         proOptions={{ hideAttribution: true }}
       >
         <MiniMap
           style={{
-            background: '#1A202C',
-            border: '1px solid #3B5B75',
-            borderRadius: '16px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-            overflow: 'hidden'
+            background: '#1A202C', border: '1px solid #3B5B75',
+            borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden',
           }}
           nodeColor={(node) => {
             switch (node.data.type) {
               case 'INPUT':  return '#3B5B75';
               case 'OUTPUT': return '#ca2f57';
-              case 'AND':
-              case 'OR':
-              case 'NOT':   return '#8A5B73';
-              default:      return '#4B5563';
+              case 'AND':    return '#8A5B73';
+              case 'OR':     return '#b8864e';
+              case 'NOT':    return '#6b5b8a';
+              default:       return '#4B5563';
             }
           }}
           nodeBorderRadius={6}
           maskColor="rgba(15, 20, 30, 0.75)"
-          pannable={true}
-          zoomable={true}
+          pannable zoomable
         />
         <Background variant="dots" gap={20} size={2} />
       </ReactFlow>
@@ -172,24 +181,25 @@ export default function CircuitCanvas({ onResult }) {
         onClick={handleCompile}
         disabled={isCompiling}
         style={{
-          position: 'absolute',
-          bottom: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10,
-          padding: '12px 24px',
-          borderRadius: 8,
-          cursor: isCompiling ? 'not-allowed' : 'pointer',
-          background: '#1D9E75',
-          color: 'white',
-          border: 'none',
-          fontWeight: 'bold',
-          fontSize: 14,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
+          padding: '12px 24px', borderRadius: 8, cursor: isCompiling ? 'not-allowed' : 'pointer',
+          background: isCompiling ? '#555' : '#1D9E75', color: 'white', border: 'none',
+          fontWeight: 'bold', fontSize: 14, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: 8,
         }}
       >
-        {isCompiling ? 'Compiling...' : 'Compile Circuit'}
+        {isCompiling && (
+          <span style={{
+            display: 'inline-block', width: 14, height: 14,
+            border: '2px solid rgba(255,255,255,0.3)',
+            borderTopColor: '#fff', borderRadius: '50%',
+            animation: 'spin 0.6s linear infinite',
+          }} />
+        )}
+        {isCompiling ? 'Compiling...' : 'Compile Circuit (Ctrl+Enter)'}
       </button>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

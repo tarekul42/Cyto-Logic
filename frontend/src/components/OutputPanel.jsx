@@ -6,6 +6,7 @@ export default function OutputPanel({ result }) {
   const [isExportingSBOL, setIsExportingSBOL] = useState(false);
   const [isExportingDNA, setIsExportingDNA] = useState(false);
   const [isExportingSVG, setIsExportingSVG] = useState(false);
+  const [exportError, setExportError] = useState(null);
   const [activeTab, setActiveTab] = useState('parts');
 
   if (!result) {
@@ -27,11 +28,12 @@ export default function OutputPanel({ result }) {
 
   const handleExport = async (exportFn, setter, label) => {
     setter(true);
+    setExportError(null);
     try {
       await exportFn();
     } catch (error) {
       console.error(`${label} failed:`, error);
-      alert(`Export failed! Please check if your backend server is running.`);
+      setExportError(`${label} export failed. Check if backend is running.`);
     } finally {
       setter(false);
     }
@@ -97,7 +99,11 @@ export default function OutputPanel({ result }) {
             )}
           </div>
 
-          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {exportError && (
+            <div style={{ color: '#ff5f5f', fontSize: 11, marginBottom: 6, marginTop: 4 }}>{exportError}</div>
+          )}
+
+          <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button
               onClick={() => handleExport(
                 () => exportSBOL(result.parts, result.logic || 'circuit'),
@@ -108,8 +114,10 @@ export default function OutputPanel({ result }) {
                 padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 600,
                 background: isExportingSBOL ? '#666' : '#c9656d', color: '#fff',
                 border: '1px solid #444', cursor: isExportingSBOL ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
+              {isExportingSBOL && <Spinner />}
               {isExportingSBOL ? 'Exporting...' : 'Export SBOL (.xml)'}
             </button>
 
@@ -123,8 +131,10 @@ export default function OutputPanel({ result }) {
                 padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 600,
                 background: isExportingDNA ? '#666' : '#2980b9', color: '#fff',
                 border: '1px solid #444', cursor: isExportingDNA ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
+              {isExportingDNA && <Spinner />}
               {isExportingDNA ? 'Exporting...' : 'Export DNA (.fa)'}
             </button>
 
@@ -138,8 +148,10 @@ export default function OutputPanel({ result }) {
                 padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 600,
                 background: isExportingSVG ? '#666' : '#e67e22', color: '#fff',
                 border: '1px solid #444', cursor: isExportingSVG ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
+              {isExportingSVG && <Spinner />}
               {isExportingSVG ? 'Exporting...' : 'Export SVG Diagram'}
             </button>
           </div>
@@ -152,5 +164,16 @@ export default function OutputPanel({ result }) {
         </div>
       )}
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span style={{
+      display: 'inline-block', width: 12, height: 12,
+      border: '2px solid rgba(255,255,255,0.3)',
+      borderTopColor: '#fff', borderRadius: '50%',
+      animation: 'spin 0.6s linear infinite',
+    }} />
   );
 }
