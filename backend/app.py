@@ -256,6 +256,15 @@ def handle_simulation():
         }), 500
 
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        "status": "ok",
+        "service": "cyto-logic-backend",
+        "version": "0.1.0",
+    })
+
+
 @app.route('/api/optimize', methods=['POST'])
 def handle_optimization():
     payload = request.get_json() or {}
