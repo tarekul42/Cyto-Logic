@@ -2,6 +2,11 @@
 
 A compiler framework for synthetic biology that transforms high-level biological logic into genetic circuit representations.
 
+**Documentation:**
+- [API Reference](docs/api.md)
+- [Architecture](docs/architecture.md)
+- [Development Guide](docs/development.md)
+
 > **Current Status:** Phases 1–4 completed. Phase 5 (Validation & Publication) completed.
 
 ---
