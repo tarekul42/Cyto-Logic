@@ -2,7 +2,7 @@
 
 A compiler framework for synthetic biology that transforms high-level biological logic into genetic circuit representations.
 
-> **Current Status:** Phase 1 (Frontend) and Phase 2 (CIR) completed. Simulation Engine is under active development.
+> **Current Status:** Phases 1–4 completed. Phase 5 (Validation & Publication) completed.
 
 ---
 
@@ -34,9 +34,9 @@ The architecture is inspired by modern compiler infrastructures such as LLVM, ad
 |--------|--------|
 | Phase 1 • Compiler Frontend | Completed (verified) |
 | Phase 2 • Circuit Intermediate Representation (CIR) | Completed |
-| Phase 3 • Simulation Engine | Planned |
-| Phase 4 • Optimization Engine | Planned |
-| Phase 5 • Validation & Publication | Planned |
+| Phase 3 • Simulation Engine | Completed |
+| Phase 4 • Optimization Engine | Completed |
+| Phase 5 • Validation & Publication | Completed |
 
 ---
 
@@ -327,11 +327,12 @@ Current and planned testing includes
 - [x] Cycle-safe graph conversion
 - [x] Vite proxy configuration
 - [x] ErrorBoundary
-- [ ] Semantic Analyzer
-- [ ] Complete Parser
-- [ ] Simulation Engine
-- [ ] Optimization Engine
-- [ ] SBOL Exporter
+- [x] Semantic Analyzer
+- [x] Complete Parser
+- [x] Simulation Engine
+- [x] Optimization Engine
+- [x] SBOL Exporter
+- [x] Validation & Benchmarks
 - [ ] DNA Exporter
 - [ ] Plugin System
 - [ ] Cloud Compiler

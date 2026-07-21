@@ -39,8 +39,9 @@ class ODESystem:
                     if tgt == nid and src in nodes
                 ]
                 species.append(label)
+                kinetics = data.get("kinetics", data["label"])
                 rates[label] = _GateRate(
-                    label, data["label"], input_labels, sp_params
+                    label, kinetics, input_labels, sp_params
                 )
 
         return species, rates
