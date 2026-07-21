@@ -1,65 +1,96 @@
-/*
-Core responsibility
----------------------------------------------------------
-Display the available logic gates that can be added
-to the circuit editor. This panel acts as the entry
-point for building a visual genetic circuit through
-drag-and-drop interactions.
+import { theme, gateConfig } from '../theme';
 
-Design note
--------------------------------------------------------
-I kept the gate definitions in a single array so new
-gate types can be added without changing the UI logic.
-The component only starts the drag operation; node
-creation is handled by the canvas.
-*/
-const GATE_TYPES = [
-    { type: 'INPUT',  desc: 'Input signal',      color: '#365571', border: '#5992c6' },
-    { type: 'AND',    desc: 'AND logic gate',    color: '#9d6070', border: '#e4b6b6' },
-    { type: 'OR',     desc: 'OR logic gate',     color: '#9d6070', border: '#e4b6b6' },
-    { type: 'NOT',    desc: 'Signal inverter',   color: '#9d6070', border: '#e4b6b6' },
-    { type: 'OUTPUT', desc: 'Output reporter',   color: '#ca2f57', border: '#f4819f' },
-  ];
+export default function PartsPanel() {
+  const onDragStart = (event, type) => {
+    event.dataTransfer.setData('application/reactflow', type);
+    event.dataTransfer.effectAllowed = 'move';
+    const ghost = event.target.cloneNode(true);
+    ghost.style.position = 'absolute';
+    ghost.style.top = '-9999px';
+    ghost.style.opacity = '0.6';
+    document.body.appendChild(ghost);
+    event.dataTransfer.setDragImage(ghost, 60, 20);
+    setTimeout(() => document.body.removeChild(ghost), 0);
+  };
 
-  export default function PartsPanel() {
-    // React Flow reads this value after the item is dropped onto the canvas.
-    const onDragStart = (event, type) => {
-      event.dataTransfer.setData('application/reactflow', type);
-      event.dataTransfer.effectAllowed = 'move';
-    };
-  
-    return (
-      <div style={{ padding: 16, background: '#23313e', height: '100%' }}>
-        <p style={{ fontSize: 12, color: '#aaa', marginBottom: 16 }}>
-          Drag gates onto the canvas
-        </p>
-        
-        {GATE_TYPES.map(({ type, desc, color, border }) => (
-          <div
-            key={type}
-            draggable
-            onDragStart={(e) => onDragStart(e, type)}
-            style={{
-              padding: '10px',
-              marginBottom: 10,
-              borderRadius: 8,
-              background: color,
-              border: `2px solid ${border}`,
-              cursor: 'grab',
-              fontSize: 13,
-              fontWeight: 600,
-              transition: 'transform 0.1s ease'
-            }}
-            // A small hover effect makes draggable items feel more interactive.
-            onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-          >
-            <div style={{ color: '#FFFFFF' }}>{type}</div>
-            <div style={{ fontSize: 11, fontWeight: 400, marginTop: 4, color: '#FFFFFF' }}>
-              {desc}
-            </div>
-          </div>
-        ))}
+  return (
+    <div style={{
+      padding: theme.size.space.outer,
+      background: theme.color.panel,
+      flex: 1,
+      overflowY: 'auto',
+    }}>
+      <div style={{
+        fontSize: theme.size.font.section,
+        fontWeight: 700,
+        color: theme.color.textTertiary,
+        marginBottom: theme.size.space.inner,
+        textTransform: 'uppercase',
+        letterSpacing: '6px',
+      }}>
+        Gates
       </div>
-    );
-  }
+
+      {Object.entries(gateConfig).map(([type, cfg]) => (
+        <div
+          key={type}
+          draggable
+          onDragStart={(e) => onDragStart(e, type)}
+          style={{
+            padding: '12px 14px',
+            marginBottom: theme.size.space.tight,
+            borderRadius: theme.size.radius.card,
+            background: cfg.bg,
+            border: `1px solid ${cfg.border}`,
+            cursor: 'grab',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            userSelect: 'none',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = theme.shadow.lift;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          <div style={{
+            width: 14, height: 14, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', cursor: 'grab', flexShrink: 0,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="4" cy="3" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+              <circle cx="10" cy="3" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+              <circle cx="4" cy="7" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+              <circle cx="10" cy="7" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+              <circle cx="4" cy="11" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+              <circle cx="10" cy="11" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+            </svg>
+          </div>
+          <span style={{
+            fontSize: theme.size.font.badge,
+            fontWeight: 700,
+            color: theme.color.textSecondary,
+            fontFamily: theme.font.mono,
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            width: 36,
+          }}>
+            {cfg.icon}
+          </span>
+          <span style={{
+            fontSize: theme.size.font.body,
+            fontWeight: 600,
+            color: theme.color.textPrimary,
+          }}>
+            {cfg.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}

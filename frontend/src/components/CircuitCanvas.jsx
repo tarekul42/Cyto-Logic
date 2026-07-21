@@ -10,6 +10,7 @@ import ReactFlow, {
 import '@reactflow/core/dist/style.css';
 import GateNode from './GateNode';
 import { compileFromGraph } from '../api/compilerApi';
+import { theme, gateConfig } from '../theme';
 
 const nodeTypes = { gateNode: GateNode };
 
@@ -26,11 +27,23 @@ const initialEdges = [
   { id: 'e3-4', source: '3', target: '4', animated: true },
 ];
 
+const btnBase = {
+  color: theme.color.textPrimary,
+  border: 'none',
+  borderRadius: theme.size.radius.button,
+  cursor: 'pointer',
+  fontSize: theme.size.font.body,
+  fontWeight: 600,
+  boxShadow: theme.shadow.button,
+  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+};
+
 export default function CircuitCanvas({ onResult }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isCompiling, setIsCompiling] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [compileStatus, setCompileStatus] = useState('idle');
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapper = useRef(null);
 
@@ -54,11 +67,16 @@ export default function CircuitCanvas({ onResult }) {
 
   const handleCompile = useCallback(async () => {
     setIsCompiling(true);
+    setCompileStatus('compiling');
     try {
       const result = await compileFromGraph(nodes, edges);
       onResult(result);
+      setCompileStatus('success');
+      setTimeout(() => setCompileStatus('idle'), 1500);
     } catch (err) {
       onResult({ success: false, error: err.message || 'Compilation failed' });
+      setCompileStatus('error');
+      setTimeout(() => setCompileStatus('idle'), 2000);
     } finally {
       setIsCompiling(false);
     }
@@ -105,8 +123,8 @@ export default function CircuitCanvas({ onResult }) {
       position,
       data: {
         type,
-        label: type === 'INPUT' ? 'Input' : type === 'OUTPUT' ? 'Output' : `${type} Gate`
-      }
+        label: type === 'INPUT' ? 'Input' : type === 'OUTPUT' ? 'Output' : `${type} Gate`,
+      },
     };
 
     setNodes((nds) => nds.concat(newNode));
@@ -117,27 +135,40 @@ export default function CircuitCanvas({ onResult }) {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const btnBase = {
-    color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer',
-    fontSize: 13, fontWeight: 600, boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-  };
+  const compileColor = compileStatus === 'success'
+    ? theme.color.success
+    : compileStatus === 'error'
+    ? theme.color.error
+    : theme.color.primary;
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#0e2439' }} ref={reactFlowWrapper}>
-      <div style={{ position: 'absolute', top: 15, left: 15, zIndex: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: theme.color.canvas }} ref={reactFlowWrapper}>
+      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
         {confirmClear ? (
           <>
-            <span style={{ fontSize: 13, color: '#ccc' }}>Clear all?</span>
-            <button onClick={handleClearConfirm} style={{ ...btnBase, background: '#ff4d4d', padding: '6px 12px' }}>
+            <span style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary }}>Clear all?</span>
+            <button onClick={handleClearConfirm} style={{ ...btnBase, background: theme.color.danger, padding: '6px 12px', fontSize: theme.size.font.small }}>
               Yes, clear
             </button>
-            <button onClick={() => setConfirmClear(false)} style={{ ...btnBase, background: '#555', padding: '6px 12px' }}>
+            <button onClick={() => setConfirmClear(false)} style={{ ...btnBase, background: theme.color.surface, padding: '6px 12px', fontSize: theme.size.font.small }}>
               Cancel
             </button>
           </>
         ) : (
-          <button onClick={() => setConfirmClear(true)} style={{ ...btnBase, background: '#ff4d4d', padding: '8px 16px', fontSize: 15 }}>
-            Create New Logic
+          <button
+            onClick={() => setConfirmClear(true)}
+            style={{
+              ...btnBase,
+              background: 'transparent',
+              border: `1px solid ${theme.color.borderLight}`,
+              padding: '6px 14px',
+              fontSize: theme.size.font.small,
+              color: theme.color.textSecondary,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
+          >
+            + New Circuit
           </button>
         )}
       </div>
@@ -157,46 +188,64 @@ export default function CircuitCanvas({ onResult }) {
       >
         <MiniMap
           style={{
-            background: '#1A202C', border: '1px solid #3B5B75',
-            borderRadius: '16px', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', overflow: 'hidden',
+            background: theme.color.panel,
+            border: `1px solid ${theme.color.border}`,
+            borderRadius: theme.size.radius.card,
+            boxShadow: theme.shadow.card,
+            overflow: 'hidden',
           }}
           nodeColor={(node) => {
-            switch (node.data.type) {
-              case 'INPUT':  return '#3B5B75';
-              case 'OUTPUT': return '#ca2f57';
-              case 'AND':    return '#8A5B73';
-              case 'OR':     return '#b8864e';
-              case 'NOT':    return '#6b5b8a';
-              default:       return '#4B5563';
-            }
+            const cfg = gateConfig[node.data.type];
+            return cfg ? cfg.border : theme.color.textTertiary;
           }}
-          nodeBorderRadius={6}
-          maskColor="rgba(15, 20, 30, 0.75)"
+          nodeBorderRadius={4}
+          maskColor="rgba(11, 25, 38, 0.8)"
           pannable zoomable
         />
-        <Background variant="dots" gap={20} size={2} />
+        <Background variant="dots" gap={20} size={1.5} color={theme.color.border} />
       </ReactFlow>
 
       <button
         onClick={handleCompile}
         disabled={isCompiling}
         style={{
-          position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
-          padding: '12px 24px', borderRadius: 8, cursor: isCompiling ? 'not-allowed' : 'pointer',
-          background: isCompiling ? '#555' : '#1D9E75', color: 'white', border: 'none',
-          fontWeight: 'bold', fontSize: 14, boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-          display: 'flex', alignItems: 'center', gap: 8,
+          ...btnBase,
+          position: 'absolute',
+          top: 12,
+          right: 12,
+          zIndex: 10,
+          padding: '10px 22px',
+          background: compileStatus === 'compiling' ? theme.color.surface : compileColor,
+          color: theme.color.textPrimary,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          boxShadow: compileStatus === 'idle' ? theme.shadow.glow : theme.shadow.button,
+        }}
+        onMouseEnter={(e) => {
+          if (!isCompiling) {
+            e.currentTarget.style.transform = 'scale(1.03)';
+            e.currentTarget.style.boxShadow = theme.shadow.glow;
+          }
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = compileStatus === 'idle' ? theme.shadow.glow : theme.shadow.button;
         }}
       >
         {isCompiling && (
           <span style={{
             display: 'inline-block', width: 14, height: 14,
             border: '2px solid rgba(255,255,255,0.3)',
-            borderTopColor: '#fff', borderRadius: '50%',
+            borderTopColor: theme.color.textPrimary,
+            borderRadius: '50%',
             animation: 'spin 0.6s linear infinite',
           }} />
         )}
-        {isCompiling ? 'Compiling...' : 'Compile Circuit (Ctrl+Enter)'}
+        {compileStatus === 'success' ? '\u2713 Compiled'
+          : compileStatus === 'error' ? '\u2717 Failed'
+          : isCompiling ? 'Compiling...'
+          : 'Compile'}
       </button>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

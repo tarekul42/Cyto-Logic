@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { theme } from '../theme';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -18,30 +19,24 @@ export default class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          background: '#1c222e',
-          color: '#fff',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-          padding: 20
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', height: '100vh',
+          background: theme.color.canvas, color: theme.color.textPrimary,
+          fontFamily: theme.font.body, padding: 20,
         }}>
-          <h1 style={{ color: '#ff5f5f' }}>Something went wrong</h1>
-          <p style={{ color: '#aaa', marginBottom: 20 }}>
+          <div style={{ fontSize: 48, marginBottom: 16, color: theme.color.error }}>&#x26A0;</div>
+          <h1 style={{ color: theme.color.error, fontSize: 24, margin: '0 0 8px' }}>Something went wrong</h1>
+          <p style={{ color: theme.color.textSecondary, marginBottom: 24, fontSize: theme.size.font.body }}>
             {this.state.error?.message || 'An unexpected error occurred.'}
           </p>
           <button
             onClick={() => window.location.reload()}
             style={{
-              padding: '10px 24px',
-              background: '#1D9E75',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              cursor: 'pointer',
-              fontSize: 14
+              padding: '10px 24px', background: theme.color.primary,
+              color: theme.color.textPrimary, border: 'none',
+              borderRadius: theme.size.radius.button, cursor: 'pointer',
+              fontSize: theme.size.font.body, fontWeight: 600,
+              boxShadow: theme.shadow.glow,
             }}
           >
             Reload Application
@@ -49,7 +44,6 @@ export default class ErrorBoundary extends Component {
         </div>
       );
     }
-
     return this.props.children;
   }
 }

@@ -1,36 +1,19 @@
-/*
-Core responsibility
-------------------------------------------------------------
-Render a single logic gate inside the visual circuit editor.
-Each node provides the connection points needed to build
-a circuit while keeping the visual appearance independent
-from the compiler itself.
-
-Design note
-----------------------------------------------------------------
-I kept rendering separate from circuit logic. This component
-only draws a node based on the data it receives. It does not
-know anything about compilation or biological mapping.
-*/
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
-
-const gateColors = {
-  AND:    { bg: '#8a5b73', border: '#c49db8', text: '#FFFFFF' },
-  OR:     { bg: '#b8864e', border: '#e8c99b', text: '#FFFFFF' },
-  NOT:    { bg: '#6b5b8a', border: '#b49dc4', text: '#FFFFFF' },
-  INPUT:  { bg: '#365571', border: '#5992c6', text: '#FFFFFF' }, 
-  OUTPUT: { bg: '#ca2f57', border: '#f4819f', text: '#FFFFFF' },
-}; 
+import { theme, gateConfig } from '../theme';
 
 export default function GateNode({ id, data }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(data.label);
-  const style = gateColors[data.type] || gateColors.INPUT;
-  
-  const isNot = data.type === 'NOT';
-  const isOutput = data.type === 'OUTPUT';
-  const isInput = data.type === 'INPUT';
+  const inputRef = useRef(null);
+  const cfg = gateConfig[data.type] || gateConfig.INPUT;
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
 
   const handleDoubleClick = (e) => {
     e.stopPropagation();
@@ -51,57 +34,133 @@ export default function GateNode({ id, data }) {
     if (e.key === 'Escape') setEditing(false);
   };
 
+  const isNot = data.type === 'NOT';
+  const isOutput = data.type === 'OUTPUT';
+  const isInput = data.type === 'INPUT';
+
+  const borderRadius = isInput
+    ? '8px 4px 4px 8px'
+    : isOutput
+    ? '4px 8px 8px 4px'
+    : '4px';
+
   return (
-    <div style={{
-      background: style.bg,
-      border: `2px solid ${style.border}`,
-      borderRadius: '8px',
-      padding: '12px 20px',
-      minWidth: 130,
-      textAlign: 'center',
-      cursor: 'grab',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-      fontFamily: '"Segoe UI", sans-serif'
-    }} onDoubleClick={handleDoubleClick}>
+    <div
+      style={{
+        background: `linear-gradient(145deg, ${cfg.bg}, ${cfg.bg}dd)`,
+        border: `1.5px solid ${cfg.border}`,
+        borderRadius,
+        padding: '10px 18px',
+        minWidth: 120,
+        textAlign: 'center',
+        cursor: 'grab',
+        boxShadow: theme.shadow.node,
+        fontFamily: theme.font.body,
+        position: 'relative',
+        transition: 'box-shadow 0.15s ease, border-color 0.15s ease',
+      }}
+      onDoubleClick={handleDoubleClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = theme.shadow.lift;
+        e.currentTarget.style.borderColor = theme.color.primary;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = theme.shadow.node;
+        e.currentTarget.style.borderColor = cfg.border;
+      }}
+    >
       {!isInput && (
         <>
-          <Handle type="target" position={Position.Left} id="a" 
-            style={{ top: isNot ? '50%' : '30%', background: '#E5E7EB', border: 'none', width: 8, height: 8 }} />
+          <Handle
+            type="target" position={Position.Left} id="a"
+            style={{
+              top: isNot ? '50%' : '30%',
+              background: theme.color.textSecondary,
+              border: `2px solid ${theme.color.panel}`,
+              width: 10, height: 10, borderRadius: '50%',
+            }}
+          />
           {!isNot && (
-            <Handle type="target" position={Position.Left} id="b" 
-              style={{ top: '70%', background: '#E5E7EB', border: 'none', width: 8, height: 8 }} />
+            <Handle
+              type="target" position={Position.Left} id="b"
+              style={{
+                top: '70%',
+                background: theme.color.textSecondary,
+                border: `2px solid ${theme.color.panel}`,
+                width: 10, height: 10, borderRadius: '50%',
+              }}
+            />
           )}
         </>
       )}
 
-      <div style={{ fontWeight: 600, fontSize: 14, color: style.text, letterSpacing: '0.5px' }}>
-        {data.type}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+      }}>
+        <span style={{
+          fontSize: theme.size.font.badge,
+          fontWeight: 700,
+          color: theme.color.textSecondary,
+          fontFamily: theme.font.mono,
+          letterSpacing: '1px',
+          opacity: 0.7,
+        }}>
+          {cfg.icon}
+        </span>
+        <span style={{
+          fontWeight: 700,
+          fontSize: theme.size.font.nodeType,
+          color: theme.color.textPrimary,
+          letterSpacing: '0.3px',
+        }}>
+          {data.type}
+        </span>
       </div>
 
       {editing ? (
         <input
-          autoFocus
+          ref={inputRef}
           value={editValue}
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleFinishEdit}
           onKeyDown={handleKeyDown}
           style={{
-            width: '100%', marginTop: 4, padding: '2px 4px',
-            fontSize: 11, textAlign: 'center', background: '#1a1a2e',
-            border: '1px solid #5992c6', borderRadius: 4,
-            color: '#fff', outline: 'none', boxSizing: 'border-box',
+            width: '100%', marginTop: 6, padding: '3px 6px',
+            fontSize: theme.size.font.nodeLabel,
+            textAlign: 'center',
+            background: theme.color.input,
+            border: `1px solid ${theme.color.primary}`,
+            borderRadius: theme.size.radius.input,
+            color: theme.color.textPrimary,
+            outline: 'none',
+            boxSizing: 'border-box',
+            fontFamily: theme.font.body,
           }}
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <div style={{ fontSize: 11, color: style.text, opacity: 0.8, marginTop: 4 }}>
+        <div style={{
+          fontSize: theme.size.font.nodeLabel,
+          color: theme.color.textSecondary,
+          marginTop: 4,
+          fontWeight: 400,
+        }}>
           {data.label}
         </div>
       )}
 
       {!isOutput && (
-        <Handle type="source" position={Position.Right} 
-          style={{ background: '#E5E7EB', border: 'none', width: 8, height: 8 }} />
+        <Handle
+          type="source" position={Position.Right}
+          style={{
+            background: theme.color.primary,
+            border: `2px solid ${theme.color.panel}`,
+            width: 10, height: 10, borderRadius: '50%',
+          }}
+        />
       )}
     </div>
   );
