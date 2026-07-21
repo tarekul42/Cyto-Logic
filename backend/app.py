@@ -182,5 +182,40 @@ def fetch_parts_inventory():
     })
 
 
+@app.route('/api/simulate', methods=['POST'])
+def handle_simulation():
+    payload = request.get_json() or {}
+    statement = payload.get('logic')
+    inputs = payload.get('inputs', {})
+    t_span = payload.get('t_span', [0, 100])
+    dt = payload.get('dt', 0.01)
+
+    if not statement:
+        return jsonify({
+            "success": False,
+            "error": "Missing 'logic' field."
+        }), 400
+
+    try:
+        from compiler.backends.simulation_stub import SimulationBackend
+        pipeline = CompilerPipeline()
+        cir, _ = pipeline.run(statement)
+        backend = SimulationBackend(t_span=tuple(t_span), dt=dt)
+        result = backend.generate(cir, inputs=inputs)
+        result["success"] = True
+        return jsonify(result)
+    except SyntaxError as syn_ex:
+        return jsonify({
+            "success": False,
+            "error": f"Syntax error: {str(syn_ex)}"
+        }), 400
+    except Exception as general_ex:
+        app.logger.exception("Simulation failed")
+        return jsonify({
+            "success": False,
+            "error": f"Simulation error: {str(general_ex)}"
+        }), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

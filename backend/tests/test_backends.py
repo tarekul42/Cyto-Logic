@@ -14,15 +14,15 @@ class TestBackendAbstraction:
         b = SimulationBackend()
         assert b.name == "Simulation"
 
-    def test_simulation_stub_returns_summary(self):
-        ir = CircuitIR()
+    def test_simulation_stub_returns_trajectory(self):
+        ir = CircuitIR(logic_statement="IF aTc -> GFP")
         ir.add_node("n1", "aTc", "input")
-        ir.add_part("BBa_E0040", "CDS", "GFP")
-        b = SimulationBackend()
-        result = b.generate(ir)
-        assert result["status"] == "not_implemented"
-        assert result["node_count"] == 1
-        assert result["part_count"] == 1
+        ir.add_node("n2", "GFP", "output")
+        ir.add_edge("n1", "n2")
+        b = SimulationBackend(t_span=(0, 1), dt=0.5)
+        result = b.generate(ir, inputs={"aTc": 10.0})
+        assert "times" in result
+        assert "trajectories" in result
 
     def test_registry_has_expected_backends(self):
         names = list_backends()
