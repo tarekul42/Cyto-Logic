@@ -7,7 +7,7 @@ A compiler framework for synthetic biology that transforms high-level biological
 - [Architecture](docs/architecture.md)
 - [Development Guide](docs/development.md)
 
-> **Current Status:** All 5 phases completed. DNA export, Plugin system, Cloud compiler, SVG visualization, Frontend UI, and Security hardening all implemented. 301 tests passing (245 backend + 56 frontend).
+> **Current Status:** All 5 phases completed. DNA export, Plugin system, Cloud compiler, SVG visualization, Frontend UI, and Security hardening all implemented. 316 tests passing (245 backend + 71 frontend).
 
 ---
 
@@ -105,7 +105,11 @@ The architecture is inspired by modern compiler infrastructures such as LLVM, ad
 - Simulation panel with configurable parameters and Recharts line chart
 - Export dropdown (SBOL / DNA / SVG)
 - Parts list with role badges
-- Keyboard shortcuts (Ctrl+Enter to compile)
+- Keyboard shortcuts (Ctrl+Enter compile, Ctrl+Z undo, Ctrl+Shift+Z redo)
+- Undo/redo history stack for circuit edits
+- Toast notification system (success/error/warning/info)
+- Save/load circuits to localStorage
+- Template gallery with pre-built circuits (AND, OR, NOT gates)
 - Loading spinners and inline error display
 - Centralized design token system
 
@@ -183,7 +187,7 @@ Every major subsystem has a single responsibility. The frontend never communicat
 | Suite | Count | Coverage |
 |-------|-------|----------|
 | Backend (pytest) | 245 | Lexer, parser, AST, IR, simulation, optimization, backends, validation, middleware, plugins, health |
-| Frontend (Vitest) | 56 | All components, theme tokens, API module |
+| Frontend (Vitest) | 71 | All components, theme tokens, API module, toast system, circuits |
 
 ---
 
