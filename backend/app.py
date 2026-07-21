@@ -3,9 +3,12 @@ from flask_cors import CORS
 from compiler.parts_db import GATES_DB, BIOMOLECULES, REPORTERS
 from compiler.backends.registry import get as get_backend
 from compiler.pipeline import CompilerPipeline
+from compiler.middleware import setup_logging, rate_limit, validate_input
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:5173", "http://localhost:4173",
+                   "http://127.0.0.1:5173"])
+setup_logging(app)
 
 def graph_to_logic(nodes, edges):
     if not nodes:
@@ -89,8 +92,13 @@ def graph_to_logic(nodes, edges):
 
 
 @app.route('/api/compile', methods=['POST'])
+@rate_limit
 def process_circuit_compilation():
     payload = request.get_json() or {}
+    validation_errors = validate_input(payload)
+    if validation_errors:
+        return jsonify({"success": False, "error": validation_errors[0]}), 400
+
     statement = payload.get('logic')
 
     if not statement:
@@ -135,6 +143,7 @@ def process_circuit_compilation():
 
 
 @app.route('/api/export/sbol', methods=['POST'])
+@rate_limit
 def handle_sbol_download():
     payload = request.get_json()
     target_parts = payload.get('parts', [])
@@ -170,6 +179,7 @@ def handle_sbol_download():
 
 
 @app.route('/api/export/dna', methods=['POST'])
+@rate_limit
 def handle_dna_export():
     payload = request.get_json() or {}
     statement = payload.get('logic')
@@ -209,6 +219,7 @@ def handle_dna_export():
 
 
 @app.route('/api/export/svg', methods=['POST'])
+@rate_limit
 def handle_svg_export():
     payload = request.get_json() or {}
     statement = payload.get('logic')
@@ -261,8 +272,12 @@ def fetch_parts_inventory():
 
 
 @app.route('/api/simulate', methods=['POST'])
+@rate_limit
 def handle_simulation():
     payload = request.get_json() or {}
+    validation_errors = validate_input(payload)
+    if validation_errors:
+        return jsonify({"success": False, "error": validation_errors[0]}), 400
     statement = payload.get('logic')
     inputs = payload.get('inputs', {})
     t_span = payload.get('t_span', [0, 100])
@@ -305,8 +320,12 @@ def health_check():
 
 
 @app.route('/api/optimize', methods=['POST'])
+@rate_limit
 def handle_optimization():
     payload = request.get_json() or {}
+    validation_errors = validate_input(payload)
+    if validation_errors:
+        return jsonify({"success": False, "error": validation_errors[0]}), 400
     statement = payload.get('logic')
     inputs = payload.get('inputs', {})
     t_span = payload.get('t_span', [0, 100])
