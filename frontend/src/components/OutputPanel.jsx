@@ -1,37 +1,13 @@
-/*
-Core responsibility
--------------------------------------------------
-Display the compiler output in a readable format.
-This panel shows the generated biological parts,
-reports compilation errors, and allows the circuit
-to be exported as an SBOL document.
+import { useState } from 'react';
+import { exportSBOL, exportDNA, exportSVG } from '../api/compilerApi';
+import SimulationPanel from './SimulationPanel';
 
-Design note
-------------------------------------------------------
-I kept result presentation separate from compilation.
-This component only displays data it receives and
-triggers export when requested. All compiler logic
-stays inside the backend and API layer.
-*/
-import {useState} from 'react';
-import {exportSBOL} from '../api/compilerApi'; 
+export default function OutputPanel({ result }) {
+  const [isExportingSBOL, setIsExportingSBOL] = useState(false);
+  const [isExportingDNA, setIsExportingDNA] = useState(false);
+  const [isExportingSVG, setIsExportingSVG] = useState(false);
+  const [activeTab, setActiveTab] = useState('parts');
 
-export default function OutputPanel({result}) {
-  const [isExporting, setIsExporting] = useState(false);
-
-  const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      await exportSBOL(result.parts, 'my_circuit');
-    } catch (error) {
-      console.error("Export failed:", error);
-      alert("SBOL Export Failed! Please check if your backend server is running.");
-    } finally {
-      // Always restore the button state, even if export fails.
-      setIsExporting(false);
-    }
-  };
-  // Nothing has been compiled yet.
   if (!result) {
     return (
       <div style={{ padding: 20, color: '#888', fontSize: 13, textAlign: 'center' }}>
@@ -39,86 +15,142 @@ export default function OutputPanel({result}) {
       </div>
     );
   }
-  // Display compiler errors instead of rendering incomplete data.
+
   if (!result.success) {
     return (
       <div style={{ padding: 20, color: '#ff5f5f', fontSize: 13 }}>
-        <strong>Compilation Error:</strong> <br/> 
+        <strong>Compilation Error:</strong> <br/>
         {result.error}
       </div>
     );
   }
 
+  const handleExport = async (exportFn, setter, label) => {
+    setter(true);
+    try {
+      await exportFn();
+    } catch (error) {
+      console.error(`${label} failed:`, error);
+      alert(`Export failed! Please check if your backend server is running.`);
+    } finally {
+      setter(false);
+    }
+  };
+
+  const tabStyle = (tab) => ({
+    flex: 1,
+    padding: '8px 0',
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+    background: activeTab === tab ? '#2c2c2c' : 'transparent',
+    color: activeTab === tab ? '#fff' : '#888',
+    borderBottom: activeTab === tab ? '2px solid #1D9E75' : '2px solid transparent',
+    transition: 'all 0.2s',
+  });
+
   return (
-    <div style={{ padding: 16, color: '#fff' }}>
-      
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-        <div style={{ flex: 1, background: '#2c2c2c', borderRadius: 8, padding: '12px' }}>
+    <div style={{ padding: 12, color: '#fff', display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+        <div style={{ flex: 1, background: '#2c2c2c', borderRadius: 8, padding: '10px' }}>
           <div style={{ fontSize: 11, color: '#aaa' }}>Output Protein</div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>
             {result.output_protein || 'N/A'}
           </div>
         </div>
-        
-        <div style={{ flex: 1, background: '#2c2c2c', borderRadius: 8, padding: '12px' }}>
+        <div style={{ flex: 1, background: '#2c2c2c', borderRadius: 8, padding: '10px' }}>
           <div style={{ fontSize: 11, color: '#aaa' }}>Total Parts</div>
-          <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2 }}>
             {result.parts?.length || 0}
           </div>
         </div>
       </div>
 
-      <p style={{ fontSize: 12, color: '#aaa', marginBottom: 10 }}>Required BioBricks:</p>
-      
-      <div style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
-        
-        {/* A scrollable list keeps large circuits from stretching the panel. */}
-        {result.parts?.map((part, index) => (
-          <div 
-            key={index} 
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              background: '#252525',
-              border: '1px solid #333',
-              borderRadius: 6, 
-              padding: '8px', 
-              marginBottom: 6,
-              fontSize: 12
-            }}
-          >
-            <span style={{ fontFamily: 'monospace', color: '#00ffcc' }}>{part.id}</span>
-            <span style={{ color: '#888' }}>{part.role}</span>
-          </div>
-        ))}
-        
-        {(!result.parts || result.parts.length === 0) && (
-          <div style={{ fontSize: 12, color: '#666', textAlign: 'center', marginTop: 10 }}>
-            No parts found in this circuit.
-          </div>
-        )}
+      <div style={{ display: 'flex', marginBottom: 10 }}>
+        <div style={tabStyle('parts')} onClick={() => setActiveTab('parts')}>Parts</div>
+        <div style={tabStyle('simulation')} onClick={() => setActiveTab('simulation')}>Simulation</div>
       </div>
 
-      <button
-        onClick={handleExport}
-        disabled={isExporting}
-        style={{ 
-          width: '100%', 
-          marginTop: 20, 
-          padding: '10px',
-          background: isExporting ? '#666' : '#c9656d', 
-          color: '#fff', 
-          border: '1px solid #444',
-          borderRadius: 8, 
-          fontSize: 13, 
-          fontWeight: 600,
-          cursor: isExporting ? 'not-allowed' : 'pointer', 
-          transition: 'background 0.2s ease-in-out'
-        }}
-      >
-        {isExporting ? 'Generating XML...' : 'Export SBOL (.xml)'}
-      </button>
-      
+      {activeTab === 'parts' && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8 }}>Required BioBricks:</div>
+
+          <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
+            {result.parts?.map((part, index) => (
+              <div
+                key={index}
+                style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  background: '#252525', border: '1px solid #333',
+                  borderRadius: 6, padding: '7px', marginBottom: 5, fontSize: 12,
+                }}
+              >
+                <span style={{ fontFamily: 'monospace', color: '#00ffcc' }}>{part.id}</span>
+                <span style={{ color: '#888' }}>{part.role}</span>
+              </div>
+            ))}
+            {(!result.parts || result.parts.length === 0) && (
+              <div style={{ fontSize: 12, color: '#666', textAlign: 'center', marginTop: 10 }}>
+                No parts found in this circuit.
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button
+              onClick={() => handleExport(
+                () => exportSBOL(result.parts, result.logic || 'circuit'),
+                setIsExportingSBOL, 'SBOL'
+              )}
+              disabled={isExportingSBOL}
+              style={{
+                padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: isExportingSBOL ? '#666' : '#c9656d', color: '#fff',
+                border: '1px solid #444', cursor: isExportingSBOL ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isExportingSBOL ? 'Exporting...' : 'Export SBOL (.xml)'}
+            </button>
+
+            <button
+              onClick={() => handleExport(
+                () => exportDNA(result.logic, result.logic || 'circuit'),
+                setIsExportingDNA, 'DNA'
+              )}
+              disabled={isExportingDNA}
+              style={{
+                padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: isExportingDNA ? '#666' : '#2980b9', color: '#fff',
+                border: '1px solid #444', cursor: isExportingDNA ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isExportingDNA ? 'Exporting...' : 'Export DNA (.fa)'}
+            </button>
+
+            <button
+              onClick={() => handleExport(
+                () => exportSVG(result.logic, result.logic || 'circuit'),
+                setIsExportingSVG, 'SVG'
+              )}
+              disabled={isExportingSVG}
+              style={{
+                padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: isExportingSVG ? '#666' : '#e67e22', color: '#fff',
+                border: '1px solid #444', cursor: isExportingSVG ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isExportingSVG ? 'Exporting...' : 'Export SVG Diagram'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'simulation' && (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <SimulationPanel logic={result.logic} />
+        </div>
+      )}
     </div>
   );
 }

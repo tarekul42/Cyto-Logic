@@ -17,11 +17,18 @@ export const compileFromGraph = async (nodes, edges) => {
   return response.data;
 };
 
-export const exportSBOL = async (parts, circuitName) => {
-  const response = await axios.post(`${API_BASE}/export/sbol`, {
-    parts,
-    name: circuitName
-  }, {
+export const simulateCircuit = async (logic, inputs = {}, t_span = [0, 100], dt = 1.0) => {
+  const response = await axios.post(`${API_BASE}/simulate`, {
+    logic,
+    inputs,
+    t_span,
+    dt
+  }, { timeout: 60000 });
+  return response.data;
+};
+
+const _downloadBlob = async (url, data, filename, mimeType) => {
+  const response = await axios.post(url, data, {
     responseType: 'blob',
     timeout: 30000
   });
@@ -33,18 +40,43 @@ export const exportSBOL = async (parts, circuitName) => {
     throw new Error(err.error || 'Export failed');
   }
 
-  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const blob = new Blob([response.data], { type: mimeType });
+  const blobUrl = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
-  link.href = url;
-
-  const fileName = circuitName || 'my_circuit';
-  link.setAttribute('download', `${fileName}.xml`);
-
+  link.href = blobUrl;
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
 
   setTimeout(() => {
     link.remove();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(blobUrl);
   }, 100);
+};
+
+export const exportSBOL = async (parts, circuitName) => {
+  await _downloadBlob(
+    `${API_BASE}/export/sbol`,
+    { parts, name: circuitName },
+    `${circuitName || 'my_circuit'}.xml`,
+    'application/xml'
+  );
+};
+
+export const exportDNA = async (logic, circuitName) => {
+  await _downloadBlob(
+    `${API_BASE}/export/dna`,
+    { logic, name: circuitName },
+    `${circuitName || 'circuit'}.fa`,
+    'text/plain'
+  );
+};
+
+export const exportSVG = async (logic, circuitName) => {
+  await _downloadBlob(
+    `${API_BASE}/export/svg`,
+    { logic, name: circuitName },
+    `${circuitName || 'circuit'}.svg`,
+    'image/svg+xml'
+  );
 };
