@@ -43,8 +43,8 @@ class SimulationResult:
         return self.trajectory(species_name)[-1]
 
 
-def simulate_circuit(cir, inputs=None, t_span=(0, 100), dt=0.01):
-    ode = ODESystem(cir, inputs=inputs)
+def simulate_circuit(cir, inputs=None, params=None, t_span=(0, 100), dt=0.01):
+    ode = ODESystem(cir, inputs=inputs, params=params)
     y0 = [0.0] * ode.num_species
     solver = Solver(dt=dt)
     times, values = solver.run(ode, y0, t_span)

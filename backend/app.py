@@ -217,5 +217,50 @@ def handle_simulation():
         }), 500
 
 
+@app.route('/api/optimize', methods=['POST'])
+def handle_optimization():
+    payload = request.get_json() or {}
+    statement = payload.get('logic')
+    inputs = payload.get('inputs', {})
+    t_span = payload.get('t_span', [0, 100])
+    dt = payload.get('dt', 1.0)
+    pop_size = payload.get('pop_size', 20)
+    generations = payload.get('generations', 5)
+    target_output = payload.get('target_output', 10.0)
+
+    if not statement:
+        return jsonify({
+            "success": False,
+            "error": "Missing 'logic' field."
+        }), 400
+
+    try:
+        from compiler.optimization import OptimizationRunner
+        pipeline = CompilerPipeline()
+        cir, _ = pipeline.run(statement)
+        runner = OptimizationRunner(
+            target_output=target_output,
+            output_species=cir.output_protein,
+            pop_size=pop_size,
+            generations=generations,
+        )
+        result = runner.run(cir, inputs=inputs,
+                            t_span=tuple(t_span), dt=dt)
+        response = result.to_dict()
+        response["success"] = True
+        return jsonify(response)
+    except SyntaxError as syn_ex:
+        return jsonify({
+            "success": False,
+            "error": f"Syntax error: {str(syn_ex)}"
+        }), 400
+    except Exception as general_ex:
+        app.logger.exception("Optimization failed")
+        return jsonify({
+            "success": False,
+            "error": f"Optimization error: {str(general_ex)}"
+        }), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
