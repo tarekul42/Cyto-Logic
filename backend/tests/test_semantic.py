@@ -43,11 +43,10 @@ class TestSemanticAnalyzer:
     def test_unknown_output_warning(self):
         ast = Circuit(
             condition=ProteinNode("aTc"),
-            output=ProteinNode("YFP"),
+            output=ProteinNode("UnknownR"),
         )
         msgs = analyze(ast)
-        assert len(warnings(msgs)) >= 1
-        assert any("YFP" in w.message for w in warnings(msgs))
+        assert any("UnknownR" in w.message for w in warnings(msgs))
 
     def test_undefined_protein_warning(self):
         ast = Circuit(

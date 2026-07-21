@@ -38,10 +38,10 @@ class TestCompilerPipeline:
 
     def test_unknown_output_generates_warning(self):
         pipeline = CompilerPipeline()
-        cir, messages = pipeline.run("IF aTc -> YFP")
+        cir, messages = pipeline.run("IF aTc -> UnknownR")
         warning_msgs = [m for m in messages if m.severity == "warning"]
         assert len(warning_msgs) >= 1
-        assert any("YFP" in m.message for m in warning_msgs)
+        assert any("UnknownR" in m.message for m in warning_msgs)
 
     def test_syntax_error(self):
         pipeline = CompilerPipeline()

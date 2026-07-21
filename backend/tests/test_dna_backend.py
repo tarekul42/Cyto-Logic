@@ -71,3 +71,33 @@ class TestDNABackend:
         backend = DNABackend()
         fasta = backend.generate(ir, circuit_name="my_circuit_v2")
         assert ">my_circuit_v2" in fasta
+
+    def test_new_reporter_bfp_has_sequence(self):
+        ir = CircuitIR()
+        ir.add_part("BBa_E0020", "CDS", "BFP")
+        backend = DNABackend()
+        fasta = backend.generate(ir)
+        assert "BBa_E0020" in fasta
+        assert len(fasta) > 100
+
+    def test_new_reporter_yfp_has_sequence(self):
+        ir = CircuitIR()
+        ir.add_part("BBa_E0030", "CDS", "YFP")
+        backend = DNABackend()
+        fasta = backend.generate(ir)
+        assert "BBa_E0030" in fasta
+
+    def test_new_promoter_plac_has_sequence(self):
+        ir = CircuitIR()
+        ir.add_part("BBa_R0010", "promoter", "pLac")
+        backend = DNABackend()
+        fasta = backend.generate(ir)
+        assert "BBa_R0010" in fasta
+
+    def test_new_rbs_medium_has_sequence(self):
+        ir = CircuitIR()
+        ir.add_part("BBa_B0032", "RBS", "medium RBS")
+        backend = DNABackend()
+        fasta = backend.generate(ir)
+        assert "BBa_B0032" in fasta
+        assert "AAAGGAGGAAAA" in fasta

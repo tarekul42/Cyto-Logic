@@ -52,7 +52,7 @@ class TestBioGateMapper:
     def test_unknown_output_custom_part(self):
         ast = Circuit(
             condition=ProteinNode("aTc"),
-            output=ProteinNode("YFP")
+            output=ProteinNode("UnknownR")
         )
         cir = map_circuit(ast)
         part_ids = [p["id"] for p in cir.parts_deduplicated()]

@@ -97,3 +97,19 @@ class TestBiologicalVerification:
         assert "aTc_inducer" in REGULATORY_MAP
         assert REGULATORY_MAP["TetR_protein"]["action"] == "repress"
         assert REGULATORY_MAP["aTc_inducer"]["action"] == "inhibit_repressor"
+        assert "IPTG_inducer" in REGULATORY_MAP
+        assert "LuxR_protein" in REGULATORY_MAP
+
+    def test_nand_gate_defined(self):
+        assert "NAND" in GATES_DB
+
+    def test_nor_gate_defined(self):
+        assert "NOR" in GATES_DB
+
+    def test_new_reporters_are_in_database(self):
+        for r in ["BFP", "YFP", "mCherry", "LacZ"]:
+            assert r in REPORTERS, f"Expected {r} in REPORTERS database"
+
+    def test_new_biomolecules_are_in_database(self):
+        for b in ["IPTG", "HSL", "AraC_activator", "LuxR"]:
+            assert b in BIOMOLECULES, f"Expected {b} in BIOMOLECULES database"
