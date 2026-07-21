@@ -1,5 +1,6 @@
 from .sbol_backend import SBOLBackend
 from .simulation_stub import SimulationBackend
+from .dna_backend import DNABackend
 
 
 _BACKENDS = {}
@@ -19,3 +20,4 @@ def list_backends():
 
 register(SBOLBackend())
 register(SimulationBackend())
+register(DNABackend())

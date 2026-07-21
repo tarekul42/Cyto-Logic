@@ -28,6 +28,7 @@ class TestBackendAbstraction:
         names = list_backends()
         assert "SBOL" in names
         assert "Simulation" in names
+        assert "DNA" in names
 
     def test_registry_get_returns_backend(self):
         b = get("SBOL")

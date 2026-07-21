@@ -169,6 +169,45 @@ def handle_sbol_download():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route('/api/export/dna', methods=['POST'])
+def handle_dna_export():
+    payload = request.get_json() or {}
+    statement = payload.get('logic')
+    project_title = payload.get('name', 'circuit')
+
+    try:
+        if statement:
+            pipeline = CompilerPipeline()
+            cir, _ = pipeline.run(statement)
+        else:
+            target_parts = payload.get('parts', [])
+            if not isinstance(target_parts, list) or len(target_parts) > 500:
+                return jsonify({
+                    "success": False,
+                    "error": "Parts list must be an array of at most 500 items."
+                }), 400
+            from compiler.cir import CircuitIR
+            cir = CircuitIR()
+            for p in target_parts:
+                cir.add_part(p["id"], p["role"], p["info"])
+
+        backend = get_backend("DNA")
+        fasta = backend.generate_fasta(cir, circuit_name=project_title)
+
+        return Response(
+            fasta,
+            mimetype='text/plain',
+            headers={
+                "Content-Disposition":
+                    f"attachment; filename={project_title}.fa"
+            }
+        )
+
+    except Exception as e:
+        app.logger.exception("DNA export failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route('/api/parts', methods=['GET'])
 def fetch_parts_inventory():
     combined_keys = (
