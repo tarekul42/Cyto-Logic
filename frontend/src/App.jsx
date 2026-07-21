@@ -33,8 +33,11 @@ export default function App() {
     }}>
        {/* Fixed sidebar keeps the toolbox visible while editing larger circuits. */}
       <div style={{ width: 180, flexShrink: 0, borderRight: '1px solid #2d3b55' }}>
-      <div style={{ padding: '16px', borderBottom: '1px solid #333', fontSize: 20, fontWeight: 600, color: '#FFFFFF', fontFamily: "'Audiowide', sans-serif" }}>
-          Cyto Logic
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/cyto_logic.png" alt="Cyto Logic" style={{ width: 28, height: 28 }} />
+          <span style={{ fontSize: 18, fontWeight: 600, color: '#FFFFFF', fontFamily: "'Audiowide', sans-serif" }}>
+            Cyto Logic
+          </span>
         </div>
         <PartsPanel />
       </div>
