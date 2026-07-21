@@ -114,17 +114,13 @@ def process_circuit_compilation():
         }), 400
 
     try:
-        lexer_engine = BioLexer(statement)
-        generated_tokens = lexer_engine.tokenize()
-
-        parser_engine = BioParser(generated_tokens)
-        syntax_tree = parser_engine.parse()
-
-        mapping_engine = BioGateMapper()
-        cir = mapping_engine.map_circuit(syntax_tree, logic_statement=statement)
+        from compiler.pipeline import CompilerPipeline
+        pipeline = CompilerPipeline()
+        cir, messages = pipeline.run(statement)
 
         api_response = cir.to_api_response()
         api_response["success"] = True
+        api_response["semantic_messages"] = [m.to_dict() for m in messages]
 
         return jsonify(api_response)
 
