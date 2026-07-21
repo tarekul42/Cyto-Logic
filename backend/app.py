@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-import sbol2
 from compiler.lexer import BioLexer
 from compiler.parser import BioParser
 from compiler.gate_mapper import BioGateMapper
-from compiler.sbol_exporter import SBOLExporter
 from compiler.parts_db import GATES_DB, BIOMOLECULES, REPORTERS
+from compiler.backends.registry import get as get_backend
 
 app = Flask(__name__)
 CORS(app)
@@ -155,10 +154,13 @@ def handle_sbol_download():
         }), 400
 
     try:
-        exporter_tool = SBOLExporter()
-        doc = exporter_tool.create_document(target_parts, project_title)
+        from compiler.cir import CircuitIR
+        cir = CircuitIR()
+        for p in target_parts:
+            cir.add_part(p["id"], p["role"], p["info"])
 
-        xml_data = doc.writeString()
+        backend = get_backend("SBOL")
+        xml_data = backend.generate_xml(cir, circuit_name=project_title)
 
         return Response(
             xml_data,
