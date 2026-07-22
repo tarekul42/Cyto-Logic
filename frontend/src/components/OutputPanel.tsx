@@ -4,7 +4,7 @@ import SimulationPanel from './SimulationPanel';
 import { useToast } from './Toast';
 import { theme } from '../theme';
 
-const roleColors = {
+const roleColors: Record<string, string> = {
   promoter:   '#00d4aa',
   rbs:        '#4a8fe7',
   cds:        '#f39c12',
@@ -15,7 +15,7 @@ const roleColors = {
   gate:       '#a78bfa',
 };
 
-function getRoleColor(role) {
+function getRoleColor(role?: string): string {
   if (!role) return theme.color.textTertiary;
   const r = role.toLowerCase();
   for (const [key, color] of Object.entries(roleColors)) {
@@ -24,14 +24,36 @@ function getRoleColor(role) {
   return theme.color.textTertiary;
 }
 
-export default function OutputPanel({ result }) {
-  const [isExporting, setIsExporting] = useState(null);
-  const [exportError, setExportError] = useState(null);
-  const [activeTab, setActiveTab] = useState('parts');
+interface Part {
+  id: string
+  role: string
+  info: string
+}
+
+interface CompileResult {
+  success: boolean
+  error?: string
+  parts?: Part[]
+  nodes?: { type: string }[]
+  edges?: unknown[]
+  logic?: string
+  output_protein?: string
+}
+
+interface OutputPanelProps {
+  result: Record<string, unknown> | null
+}
+
+export default function OutputPanel({ result }: OutputPanelProps) {
+  const [isExporting, setIsExporting] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'parts' | 'simulation'>('parts');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const toast = useToast();
 
-  if (!result) {
+  const r = result as CompileResult | null;
+
+  if (!r) {
     return (
       <div style={{
         padding: theme.size.space.outer, color: theme.color.textTertiary,
@@ -48,7 +70,7 @@ export default function OutputPanel({ result }) {
     );
   }
 
-  if (!result.success) {
+  if (!r.success) {
     return (
       <div style={{
         padding: theme.size.space.outer, fontSize: theme.size.font.small, flex: 1,
@@ -61,14 +83,14 @@ export default function OutputPanel({ result }) {
         }}>
           <strong>Compilation Error</strong>
           <div style={{ marginTop: 4, color: theme.color.textSecondary }}>
-            {result.error}
+            {r.error}
           </div>
         </div>
       </div>
     );
   }
 
-  const handleExport = async (exportFn, label) => {
+  const handleExport = async (exportFn: () => Promise<void>, label: string) => {
     setIsExporting(label);
     setExportError(null);
     setShowExportMenu(false);
@@ -84,7 +106,7 @@ export default function OutputPanel({ result }) {
     }
   };
 
-  const tabStyle = (tab) => ({
+  const tabStyle = (tab: string): Record<string, string | number> => ({
     flex: 1,
     padding: '10px 0',
     textAlign: 'center',
@@ -98,7 +120,7 @@ export default function OutputPanel({ result }) {
     transition: 'color 0.2s, border-color 0.2s',
   });
 
-  const exportBtnStyle = (label) => ({
+  const exportBtnStyle = (label: string): Record<string, string | number> => ({
     padding: '8px 14px', borderRadius: theme.size.radius.button,
     fontSize: theme.size.font.small, fontWeight: 600,
     background: isExporting === label ? theme.color.surface : 'transparent',
@@ -112,15 +134,15 @@ export default function OutputPanel({ result }) {
   });
 
   const exportOptions = [
-    { label: 'SBOL', fn: () => exportSBOL(result.parts, result.logic || 'circuit'), icon: '\u29C9' },
-    { label: 'DNA',  fn: () => exportDNA(result.logic, result.logic || 'circuit'),  icon: '\u2240' },
-    { label: 'SVG',  fn: () => exportSVG(result.logic, result.logic || 'circuit'),  icon: '\u25A2' },
+    { label: 'SBOL', fn: () => exportSBOL(r.parts || [], (r.logic || 'circuit') as string), icon: '\u29C9' },
+    { label: 'DNA',  fn: () => exportDNA((r.logic || '') as string, (r.logic || 'circuit') as string),  icon: '\u2240' },
+    { label: 'SVG',  fn: () => exportSVG((r.logic || '') as string, (r.logic || 'circuit') as string),  icon: '\u25A2' },
   ];
 
-  const nodeCount = result.nodes?.length || 0;
-  const edgeCount = result.edges?.length || 0;
-  const inputCount = result.nodes?.filter((n) => n.type === 'INPUT').length;
-  const outputCount = result.nodes?.filter((n) => n.type === 'OUTPUT').length;
+  const nodeCount = r.nodes?.length || 0;
+  const edgeCount = r.edges?.length || 0;
+  const inputCount = r.nodes?.filter((n) => n.type === 'INPUT').length;
+  const outputCount = r.nodes?.filter((n) => n.type === 'OUTPUT').length;
 
   return (
     <div style={{
@@ -143,7 +165,7 @@ export default function OutputPanel({ result }) {
             fontSize: 15, fontWeight: 600, marginTop: 2,
             color: theme.color.primary, fontFamily: theme.font.mono,
           }}>
-            {result.output_protein || 'N/A'}
+            {r.output_protein || 'N/A'}
           </div>
         </div>
         <div style={{
@@ -154,7 +176,7 @@ export default function OutputPanel({ result }) {
             Parts
           </div>
           <div style={{ fontSize: 15, fontWeight: 600, marginTop: 2, color: theme.color.textPrimary }}>
-            {result.parts?.length || 0}
+            {r.parts?.length || 0}
           </div>
         </div>
       </div>
@@ -181,7 +203,7 @@ export default function OutputPanel({ result }) {
       {activeTab === 'parts' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: 4 }}>
-            {result.parts?.map((part, index) => (
+            {r.parts?.map((part, index) => (
               <div
                 key={index}
                 style={{
@@ -207,7 +229,7 @@ export default function OutputPanel({ result }) {
                 )}
               </div>
             ))}
-            {(!result.parts || result.parts.length === 0) && (
+            {(!r.parts || r.parts.length === 0) && (
               <div style={{ fontSize: theme.size.font.small, color: theme.color.textTertiary, textAlign: 'center', marginTop: 10 }}>
                 No parts found in this circuit.
               </div>
@@ -271,7 +293,7 @@ export default function OutputPanel({ result }) {
 
       {activeTab === 'simulation' && (
         <div style={{ flex: 1, overflow: 'hidden', overflowY: 'auto' }}>
-          <SimulationPanel logic={result.logic} />
+          <SimulationPanel logic={r.logic as string} />
         </div>
       )}
     </div>

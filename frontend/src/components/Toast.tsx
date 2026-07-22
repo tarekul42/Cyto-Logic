@@ -1,15 +1,23 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
 import { theme } from '../theme'
 
-const ToastContext = createContext(null)
+interface ToastItem {
+  id: number
+  message: string
+  type: string
+}
+
+type ToastFn = (message: string, type?: string, duration?: number) => number | undefined
+
+const ToastContext = createContext<ToastFn | null>(null)
 
 let toastId = 0
 
-export function ToastProvider({ children }) {
-  const [toasts, setToasts] = useState([])
-  const timers = useRef({})
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([])
+  const timers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
 
-  const addToast = useCallback((message, type = 'info', duration = 3000) => {
+  const addToast = useCallback((message: string, type = 'info', duration = 3000) => {
     const id = ++toastId
     setToasts((prev) => [...prev, { id, message, type }])
     timers.current[id] = setTimeout(() => {
@@ -19,7 +27,7 @@ export function ToastProvider({ children }) {
     return id
   }, [])
 
-  const removeToast = useCallback((id) => {
+  const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
     if (timers.current[id]) {
       clearTimeout(timers.current[id])
@@ -27,9 +35,9 @@ export function ToastProvider({ children }) {
     }
   }, [])
 
-  const toast = useCallback((message, type, duration) => addToast(message, type, duration), [addToast])
+  const toast = useCallback((message: string, type?: string, duration?: number) => addToast(message, type, duration), [addToast])
 
-  const colors = {
+  const colors: Record<string, string> = {
     success: theme.color.success,
     error: theme.color.error,
     warning: theme.color.warning,
@@ -81,7 +89,8 @@ export function ToastProvider({ children }) {
   )
 }
 
-export function useToast() {
+// eslint-disable-next-line react-refresh/only-export-components
+export function useToast(): ToastFn {
   const ctx = useContext(ToastContext)
   if (!ctx) throw new Error('useToast must be used within ToastProvider')
   return ctx

@@ -8,10 +8,23 @@ import { theme } from '../theme';
 
 const COLORS = ['#00d4aa', '#4a8fe7', '#f39c12', '#e74c5e', '#a78bfa', '#fb923c'];
 
-export default function SimulationPanel({ logic }) {
-  const [simResult, setSimResult] = useState(null);
+interface SimResult {
+  success?: boolean
+  error?: string
+  times?: number[]
+  trajectories?: Record<string, number[]>
+  species?: string[]
+  num_points?: number
+}
+
+interface SimulationPanelProps {
+  logic?: string
+}
+
+export default function SimulationPanel({ logic }: SimulationPanelProps) {
+  const [simResult, setSimResult] = useState<SimResult | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [tStart, setTStart] = useState(0);
   const [tEnd, setTEnd] = useState(100);
   const [dt, setDt] = useState(1.0);
@@ -22,7 +35,7 @@ export default function SimulationPanel({ logic }) {
     setIsSimulating(true);
     setError(null);
     try {
-      const result = await simulateCircuit(logic, {}, [Number(tStart), Number(tEnd)], Number(dt));
+      const result = (await simulateCircuit(logic, {}, [Number(tStart), Number(tEnd)], Number(dt))) as SimResult;
       if (result.success === false) {
         setError(result.error || 'Simulation failed');
         toast('Simulation failed', 'error');
@@ -31,7 +44,8 @@ export default function SimulationPanel({ logic }) {
         toast('Simulation complete', 'success');
       }
     } catch (err) {
-      setError(err.message || 'Simulation request failed');
+      const message = err instanceof Error ? err.message : 'Simulation request failed';
+      setError(message);
       toast('Simulation request failed', 'error');
     } finally {
       setIsSimulating(false);
@@ -39,7 +53,7 @@ export default function SimulationPanel({ logic }) {
   };
 
   const chartData = simResult?.times?.map((t, i) => {
-    const point = { time: t };
+    const point: Record<string, number> = { time: t };
     if (simResult.trajectories) {
       Object.entries(simResult.trajectories).forEach(([sp, vals]) => {
         point[sp] = vals[i];
@@ -48,7 +62,7 @@ export default function SimulationPanel({ logic }) {
     return point;
   });
 
-  const inputStyle = {
+  const inputStyle: Record<string, string | number> = {
     width: 56, padding: '4px 6px', fontSize: theme.size.font.small,
     background: theme.color.input, border: `1px solid ${theme.color.inputBorder}`,
     borderRadius: theme.size.radius.input, color: theme.color.textPrimary,
@@ -92,13 +106,13 @@ export default function SimulationPanel({ logic }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <label style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
           t:
-          <input type="number" value={tStart} onChange={(e) => setTStart(e.target.value)} style={inputStyle} />
+          <input type="number" value={tStart} onChange={(e) => setTStart(Number(e.target.value))} style={inputStyle} />
           <span style={{ color: theme.color.textTertiary }}>&ndash;</span>
-          <input type="number" value={tEnd} onChange={(e) => setTEnd(e.target.value)} style={inputStyle} />
+          <input type="number" value={tEnd} onChange={(e) => setTEnd(Number(e.target.value))} style={inputStyle} />
         </label>
         <label style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
           dt:
-          <input type="number" step="0.1" value={dt} onChange={(e) => setDt(e.target.value)} style={{ ...inputStyle, width: 48 }} />
+          <input type="number" step="0.1" value={dt} onChange={(e) => setDt(Number(e.target.value))} style={{ ...inputStyle, width: 48 }} />
         </label>
       </div>
 
@@ -118,7 +132,7 @@ export default function SimulationPanel({ logic }) {
             fontSize: theme.size.font.section, color: theme.color.textTertiary, marginBottom: 8,
             textTransform: 'uppercase', letterSpacing: '4px', fontWeight: 700,
           }}>
-            Time-series ({simResult.num_points} points)
+            Time-series ({simResult?.num_points} points)
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
@@ -135,7 +149,7 @@ export default function SimulationPanel({ logic }) {
                 labelStyle={{ color: theme.color.textSecondary }}
               />
               <Legend wrapperStyle={{ fontSize: theme.size.font.small, color: theme.color.textSecondary }} />
-              {simResult.species?.map((sp, i) => (
+              {simResult?.species?.map((sp, i) => (
                 <Line
                   key={sp}
                   type="monotone"
@@ -148,7 +162,7 @@ export default function SimulationPanel({ logic }) {
               ))}
             </LineChart>
           </ResponsiveContainer>
-          {simResult.species && (
+          {simResult?.species && (
             <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
               {simResult.species.map((sp, i) => (
                 <div key={sp} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

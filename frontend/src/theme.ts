@@ -1,4 +1,71 @@
-export const theme = {
+export interface Theme {
+  color: {
+    canvas: string
+    panel: string
+    surface: string
+    surfaceAlt: string
+    border: string
+    borderLight: string
+    primary: string
+    primaryDim: string
+    secondary: string
+    danger: string
+    dangerDim: string
+    warning: string
+    textPrimary: string
+    textSecondary: string
+    textTertiary: string
+    input: string
+    inputBorder: string
+    nodeInput: string
+    nodeInputBorder: string
+    nodeGate: string
+    nodeGateBorder: string
+    nodeOutput: string
+    nodeOutputBorder: string
+    success: string
+    error: string
+  }
+  font: {
+    brand: string
+    body: string
+    mono: string
+  }
+  size: {
+    sidebar: number
+    results: number
+    radius: {
+      card: number
+      button: number
+      input: number
+      node: number
+    }
+    space: {
+      outer: number
+      inner: number
+      tight: number
+      gap: number
+    }
+    font: {
+      brand: number
+      section: number
+      body: number
+      small: number
+      badge: number
+      nodeType: number
+      nodeLabel: number
+    }
+  }
+  shadow: {
+    card: string
+    button: string
+    glow: string
+    node: string
+    lift: string
+  }
+}
+
+export const theme: Theme = {
   color: {
     canvas:       '#0b1926',
     panel:        '#112233',
@@ -65,7 +132,14 @@ export const theme = {
   },
 }
 
-export const gateConfig = {
+export interface GateConfig {
+  icon: string
+  label: string
+  bg: string
+  border: string
+}
+
+export const gateConfig: Record<string, GateConfig> = {
   INPUT: {
     icon:    '\u203A',
     label:   'Input',
@@ -98,4 +172,4 @@ export const gateConfig = {
   },
 }
 
-export const spacer = (n) => `${n * 4}px`
+export const spacer = (n: number): string => `${n * 4}px`

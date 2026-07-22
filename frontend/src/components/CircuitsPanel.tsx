@@ -1,10 +1,24 @@
 import { useState } from 'react'
 import { useToast } from './Toast'
 import { theme } from '../theme'
+import type { Node, Edge } from '@xyflow/react'
 
 const STORAGE_KEY = 'cyto-logic-circuits'
 
-const TEMPLATES = [
+interface SavedCircuit {
+  name: string
+  nodes: Node[]
+  edges: Edge[]
+  savedAt: number
+}
+
+interface Template {
+  name: string
+  nodes: Node[]
+  edges: Edge[]
+}
+
+const TEMPLATES: Template[] = [
   { name: 'AND Gate', nodes: [
     { id: 't1', type: 'gateNode', position: { x: 80, y: 160 }, data: { type: 'INPUT', label: 'aTc' } },
     { id: 't2', type: 'gateNode', position: { x: 80, y: 280 }, data: { type: 'INPUT', label: 'AraC' } },
@@ -35,17 +49,23 @@ const TEMPLATES = [
   ]},
 ]
 
-export default function CircuitsPanel({ nodes, edges, onLoad }) {
+interface CircuitsPanelProps {
+  nodes: Node[]
+  edges: Edge[]
+  onLoad: (nodes: Node[], edges: Edge[]) => void
+}
+
+export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelProps) {
   const toast = useToast()
   const [showSaved, setShowSaved] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [saveName, setSaveName] = useState('')
-  const [savedCircuits, setSavedCircuits] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') }
+  const [savedCircuits, setSavedCircuits] = useState<SavedCircuit[]>(() => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as SavedCircuit[] }
     catch { return [] }
   })
 
-  const persistSaved = (list) => {
+  const persistSaved = (list: SavedCircuit[]) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
     setSavedCircuits(list)
   }
@@ -53,9 +73,9 @@ export default function CircuitsPanel({ nodes, edges, onLoad }) {
   const handleSave = () => {
     const name = saveName.trim()
     if (!name) { toast('Enter a circuit name', 'warning'); return }
-    const data = { name, nodes, edges, savedAt: Date.now() }
+    const data: SavedCircuit = { name, nodes, edges, savedAt: Date.now() }
     const existing = savedCircuits.findIndex((c) => c.name === name)
-    let updated
+    let updated: SavedCircuit[]
     if (existing >= 0) {
       updated = [...savedCircuits]
       updated[existing] = data
@@ -67,29 +87,29 @@ export default function CircuitsPanel({ nodes, edges, onLoad }) {
     toast(`Saved "${name}"`, 'success')
   }
 
-  const handleLoad = (circuit) => {
+  const handleLoad = (circuit: SavedCircuit) => {
     onLoad(circuit.nodes, circuit.edges)
     toast(`Loaded "${circuit.name}"`, 'info')
   }
 
-  const handleDelete = (name) => {
+  const handleDelete = (name: string) => {
     persistSaved(savedCircuits.filter((c) => c.name !== name))
     toast(`Deleted "${name}"`, 'info')
   }
 
-  const handleTemplate = (t) => {
+  const handleTemplate = (t: Template) => {
     onLoad(t.nodes, t.edges)
     toast(`Loaded "${t.name}" template`, 'info')
   }
 
-  const toggle = (open) => ({
+  const toggle = (): Record<string, string | number> => ({
     fontSize: theme.size.font.section, fontWeight: 700, color: theme.color.textTertiary,
     textTransform: 'uppercase', letterSpacing: '5px', cursor: 'pointer', userSelect: 'none',
     padding: `8px ${theme.size.space.outer}px`, borderBottom: `1px solid ${theme.color.border}`,
     transition: 'color 0.15s',
   })
 
-  const btn = {
+  const btn: Record<string, string | number> = {
     padding: '6px 10px', marginBottom: 4, background: theme.color.surface,
     border: `1px solid ${theme.color.border}`, borderRadius: theme.size.radius.input,
     cursor: 'pointer', fontSize: theme.size.font.small, color: theme.color.textSecondary,

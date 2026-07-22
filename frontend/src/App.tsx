@@ -1,29 +1,27 @@
-import { useState, useRef, useCallback } from 'react';
-import { ReactFlowProvider } from 'reactflow';
+import { useState, useCallback } from 'react';
+import { ReactFlowProvider } from '@xyflow/react';
 import CircuitCanvas from './components/CircuitCanvas';
 import PartsPanel from './components/PartsPanel';
 import CircuitsPanel from './components/CircuitsPanel';
 import OutputPanel from './components/OutputPanel';
 import { ToastProvider } from './components/Toast';
 import { theme } from './theme';
+import type { Node, Edge } from '@xyflow/react';
 
 export default function App() {
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [circuitKey, setCircuitKey] = useState(0);
-  const [loadedCircuit, setLoadedCircuit] = useState(null);
-  const circuitRef = useRef({ nodes: [], edges: [] });
+  const [loadedCircuit, setLoadedCircuit] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
+  const [currentCircuit, setCurrentCircuit] = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] });
 
-  const handleCircuitChange = useCallback((nodes, edges) => {
-    circuitRef.current = { nodes, edges }
+  const handleCircuitChange = useCallback((nodes: Node[], edges: Edge[]) => {
+    setCurrentCircuit({ nodes, edges })
   }, []);
 
-  const handleLoadCircuit = useCallback((nodes, edges) => {
+  const handleLoadCircuit = useCallback((nodes: Node[], edges: Edge[]) => {
     setLoadedCircuit({ nodes, edges })
+    setCurrentCircuit({ nodes, edges })
     setCircuitKey((k) => k + 1)
-  }, []);
-
-  const handleSaveCircuit = useCallback((name) => {
-    return circuitRef.current
   }, []);
 
   return (
@@ -64,8 +62,8 @@ export default function App() {
         </div>
         <PartsPanel />
         <CircuitsPanel
-          nodes={circuitRef.current.nodes}
-          edges={circuitRef.current.edges}
+          nodes={currentCircuit.nodes}
+          edges={currentCircuit.edges}
           onLoad={handleLoadCircuit}
         />
       </div>

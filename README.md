@@ -193,9 +193,10 @@ Every major subsystem has a single responsibility. The frontend never communicat
 
 ## Tech Stack
 
-- **Backend:** Python 3.12, Flask, SBOL2
-- **Frontend:** React 19, Vite 8, ReactFlow, Recharts, Axios
+- **Backend:** Python 3.14, Flask, SBOL2
+- **Frontend:** React 19, Vite 8, @xyflow/react, Recharts, Axios
 - **Infrastructure:** Docker, GitHub Actions CI
+- **Runtime:** Bun (frontend), Python pip (backend)
 - **Testing:** pytest (backend), Vitest + Testing Library (frontend)
 
 ---

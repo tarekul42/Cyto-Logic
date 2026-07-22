@@ -1,10 +1,10 @@
 import { theme, gateConfig } from '../theme';
 
 export default function PartsPanel() {
-  const onDragStart = (event, type) => {
+  const onDragStart = (event: React.DragEvent, type: string) => {
     event.dataTransfer.setData('application/reactflow', type);
     event.dataTransfer.effectAllowed = 'move';
-    const ghost = event.target.cloneNode(true);
+    const ghost = (event.target as HTMLElement).cloneNode(true) as HTMLElement;
     ghost.style.position = 'absolute';
     ghost.style.top = '-9999px';
     ghost.style.opacity = '0.6';

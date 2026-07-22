@@ -1,35 +1,43 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
   useReactFlow,
   Background,
   MiniMap,
-} from 'reactflow';
-import '@reactflow/core/dist/style.css';
+  type Node,
+  type Edge,
+  type Connection,
+  type NodeChange,
+  type EdgeChange,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import GateNode from './GateNode';
 import { compileFromGraph } from '../api/compilerApi';
 import { theme, gateConfig } from '../theme';
 import { useToast } from './Toast';
 
+export type { Node, Edge }
+
 const MAX_HISTORY = 50
 const nodeTypes = { gateNode: GateNode };
 
-const initialNodes = [
+const initialNodes: Node[] = [
   { id: '1', type: 'gateNode', position: { x: 80,  y: 120 }, data: { type: 'INPUT',  label: 'aTc' } },
   { id: '2', type: 'gateNode', position: { x: 80,  y: 240 }, data: { type: 'INPUT',  label: 'AraC' } },
   { id: '3', type: 'gateNode', position: { x: 280, y: 180 }, data: { type: 'AND',    label: 'AND gate' } },
   { id: '4', type: 'gateNode', position: { x: 480, y: 180 }, data: { type: 'OUTPUT', label: 'GFP' } },
 ];
 
-const initialEdges = [
+const initialEdges: Edge[] = [
   { id: 'e1-3', source: '1', target: '3', targetHandle: 'a', animated: true },
   { id: 'e2-3', source: '2', target: '3', targetHandle: 'b', animated: true },
   { id: 'e3-4', source: '3', target: '4', animated: true },
 ];
 
-const btnBase = {
+const btnBase: Record<string, string | number> = {
   color: theme.color.textPrimary,
   border: 'none',
   borderRadius: theme.size.radius.button,
@@ -40,18 +48,24 @@ const btnBase = {
   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
 };
 
-export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult }) {
+interface CircuitCanvasProps {
+  loadedCircuit: { nodes: Node[]; edges: Edge[] } | null
+  onCircuitChange: (nodes: Node[], edges: Edge[]) => void
+  onResult: (result: Record<string, unknown>) => void
+}
+
+export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult }: CircuitCanvasProps) {
   const startNodes = loadedCircuit ? loadedCircuit.nodes : initialNodes;
   const startEdges = loadedCircuit ? loadedCircuit.edges : initialEdges;
   const [nodes, setNodes, onNodesChange] = useNodesState(startNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(startEdges);
   const [isCompiling, setIsCompiling] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [compileStatus, setCompileStatus] = useState('idle');
+  const [compileStatus, setCompileStatus] = useState<'idle' | 'compiling' | 'success' | 'error'>('idle');
   const toast = useToast();
   const reactFlowInstance = useReactFlow();
-  const reactFlowWrapper = useRef(null);
-  const history = useRef({ past: [], future: [] });
+  const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const history = useRef<{ past: { nodes: Node[]; edges: Edge[] }[]; future: { nodes: Node[]; edges: Edge[] }[] }>({ past: [], future: [] });
 
   useEffect(() => {
     onCircuitChange?.(nodes, edges)
@@ -68,7 +82,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     const h = history.current
     if (h.past.length === 0) return
     h.future.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
-    const prev = h.past.pop()
+    const prev = h.past.pop()!
     setNodes(prev.nodes)
     setEdges(prev.edges)
     toast('Undo', 'info', 1500)
@@ -78,32 +92,13 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     const h = history.current
     if (h.future.length === 0) return
     h.past.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
-    const next = h.future.pop()
+    const next = h.future.pop()!
     setNodes(next.nodes)
     setEdges(next.edges)
     toast('Redo', 'info', 1500)
   }, [nodes, edges, setNodes, setEdges, toast])
 
-  useEffect(() => {
-    const handler = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        undo()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
-        e.preventDefault()
-        redo()
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault()
-        compileRef.current()
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [undo, redo])
-
-  const handleLabelChange = useCallback((nodeId, newLabel) => {
+  const handleLabelChange = useCallback((nodeId: string, newLabel: string) => {
     pushHistory()
     setNodes((nds) =>
       nds.map((n) =>
@@ -132,7 +127,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       toast('Circuit compiled successfully', 'success');
       setTimeout(() => setCompileStatus('idle'), 1500);
     } catch (err) {
-      onResult({ success: false, error: err.message || 'Compilation failed' });
+      const message = err instanceof Error ? err.message : 'Compilation failed';
+      onResult({ success: false, error: message });
       setCompileStatus('error');
       toast('Compilation failed', 'error');
       setTimeout(() => setCompileStatus('idle'), 2000);
@@ -141,11 +137,27 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     }
   }, [nodes, edges, onResult, toast]);
 
-  const compileRef = useRef(handleCompile);
-  compileRef.current = handleCompile;
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault()
+        redo()
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        handleCompile()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo, redo, handleCompile])
 
   const onConnect = useCallback(
-    (params) => {
+    (params: Connection) => {
       pushHistory()
       setEdges((eds) => addEdge({ ...params, animated: true }, eds))
     },
@@ -160,7 +172,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     toast('Circuit cleared', 'info');
   };
 
-  const onDrop = useCallback((event) => {
+  const onDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     const type = event.dataTransfer.getData('application/reactflow');
     if (!type || !reactFlowInstance) return;
@@ -182,7 +194,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     }));
   }, [setNodes, reactFlowInstance, pushHistory]);
 
-  const onDragOver = useCallback((event) => {
+  const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
@@ -264,8 +276,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       <ReactFlow
         nodes={nodesWithCallbacks}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        onNodesChange={onNodesChange as (changes: NodeChange[]) => void}
+        onEdgesChange={onEdgesChange as (changes: EdgeChange[]) => void}
         onConnect={onConnect}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -283,7 +295,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
             overflow: 'hidden',
           }}
           nodeColor={(node) => {
-            const cfg = gateConfig[node.data.type];
+            const data = node.data as { type: string }
+            const cfg = gateConfig[data.type];
             return cfg ? cfg.border : theme.color.textTertiary;
           }}
           nodeBorderRadius={4}
@@ -312,13 +325,13 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         }}
         onMouseEnter={(e) => {
           if (!isCompiling) {
-            e.currentTarget.style.transform = 'scale(1.03)';
-            e.currentTarget.style.boxShadow = theme.shadow.glow;
+            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = theme.shadow.glow;
           }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = compileStatus === 'idle' ? theme.shadow.glow : theme.shadow.button;
+          (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
+          (e.currentTarget as HTMLButtonElement).style.boxShadow = compileStatus === 'idle' ? theme.shadow.glow : theme.shadow.button;
         }}
       >
         {isCompiling && (

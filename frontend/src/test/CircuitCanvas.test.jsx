@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ReactFlowProvider } from 'reactflow'
+import { ReactFlowProvider } from '@xyflow/react'
 import CircuitCanvas from '../components/CircuitCanvas'
 import { ToastProvider } from '../components/Toast'
 import * as api from '../api/compilerApi'

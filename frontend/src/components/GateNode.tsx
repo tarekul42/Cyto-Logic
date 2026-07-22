@@ -1,11 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { theme, gateConfig } from '../theme';
 
-export default function GateNode({ id, data }) {
+interface GateNodeData {
+  type: string
+  label: string
+  onLabelChange?: (id: string, label: string) => void
+}
+
+export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(data.label);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const cfg = gateConfig[data.type] || gateConfig.INPUT;
 
   useEffect(() => {
@@ -15,7 +21,7 @@ export default function GateNode({ id, data }) {
     }
   }, [editing]);
 
-  const handleDoubleClick = (e) => {
+  const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setEditValue(data.label);
     setEditing(true);
@@ -29,7 +35,7 @@ export default function GateNode({ id, data }) {
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleFinishEdit();
     if (e.key === 'Escape') setEditing(false);
   };
