@@ -3,8 +3,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import OutputPanel from '../components/OutputPanel'
 import { ToastProvider } from '../components/Toast'
+import type { ReactNode } from 'react'
 
-const mockResult = {
+const mockResult: Record<string, unknown> = {
   success: true,
   output_protein: 'GFP',
   parts: [
@@ -23,7 +24,7 @@ describe('OutputPanel', () => {
     vi.clearAllMocks()
   })
 
-  function renderWithToast(ui) {
+  function renderWithToast(ui: ReactNode) {
     return render(<ToastProvider>{ui}</ToastProvider>)
   }
 

@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import * as api from '../api/compilerApi'
 import SimulationPanel from '../components/SimulationPanel'
 import { ToastProvider } from '../components/Toast'
+import type { ReactNode } from 'react'
 
 vi.mock('../api/compilerApi', () => ({
   simulateCircuit: vi.fn(),
@@ -14,7 +15,7 @@ describe('SimulationPanel', () => {
     vi.clearAllMocks()
   })
 
-  function renderWithToast(ui) {
+  function renderWithToast(ui: ReactNode) {
     return render(<ToastProvider>{ui}</ToastProvider>)
   }
 
@@ -24,7 +25,7 @@ describe('SimulationPanel', () => {
   })
 
   it('disables button when no logic provided', () => {
-    renderWithToast(<SimulationPanel logic={null} />)
+    renderWithToast(<SimulationPanel logic="" />)
     expect(screen.getByText('Run Simulation')).toBeDisabled()
   })
 
@@ -41,7 +42,7 @@ describe('SimulationPanel', () => {
 
   it('calls simulateCircuit on button click', async () => {
     const user = userEvent.setup()
-    api.simulateCircuit.mockResolvedValue({
+    ;(api.simulateCircuit as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true, times: [0, 1, 2],
       trajectories: { GFP: [0, 1, 0] },
       species: ['GFP'], num_points: 3,
@@ -57,7 +58,7 @@ describe('SimulationPanel', () => {
 
   it('displays error when simulation fails', async () => {
     const user = userEvent.setup()
-    api.simulateCircuit.mockRejectedValue(new Error('Network error'))
+    ;(api.simulateCircuit as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'))
 
     renderWithToast(<SimulationPanel logic="A AND B" />)
     await user.click(screen.getByText('Run Simulation'))
@@ -67,7 +68,7 @@ describe('SimulationPanel', () => {
 
   it('displays backend error result', async () => {
     const user = userEvent.setup()
-    api.simulateCircuit.mockResolvedValue({
+    ;(api.simulateCircuit as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: false, error: 'Simulation diverged',
     })
 
@@ -79,7 +80,7 @@ describe('SimulationPanel', () => {
 
   it('renders chart after successful simulation', async () => {
     const user = userEvent.setup()
-    api.simulateCircuit.mockResolvedValue({
+    ;(api.simulateCircuit as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true, times: [0, 1, 2],
       trajectories: { GFP: [0, 1, 0] },
       species: ['GFP'], num_points: 3,
@@ -94,7 +95,7 @@ describe('SimulationPanel', () => {
 
   it('uses custom t_span and dt values', async () => {
     const user = userEvent.setup()
-    api.simulateCircuit.mockResolvedValue({
+    ;(api.simulateCircuit as ReturnType<typeof vi.fn>).mockResolvedValue({
       success: true, times: [0, 1],
       trajectories: { GFP: [0, 1] },
       species: ['GFP'], num_points: 2,

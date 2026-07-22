@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { theme, gateConfig } from '../theme'
 
+const requiredColorKeys = ['canvas', 'panel', 'surface', 'border', 'primary', 'secondary', 'danger', 'textPrimary', 'textSecondary', 'textTertiary'] as const
+
 describe('theme', () => {
   it('has all required color tokens', () => {
-    const required = ['canvas', 'panel', 'surface', 'border', 'primary', 'secondary', 'danger', 'textPrimary', 'textSecondary', 'textTertiary']
-    for (const key of required) {
+    for (const key of requiredColorKeys) {
       expect(theme.color).toHaveProperty(key)
       expect(theme.color[key]).toMatch(/^#[0-9a-fA-F]{6}$/)
     }
@@ -41,7 +42,7 @@ describe('theme', () => {
 })
 
 describe('gateConfig', () => {
-  const types = ['INPUT', 'AND', 'OR', 'NOT', 'OUTPUT']
+  const types = ['INPUT', 'AND', 'OR', 'NOT', 'OUTPUT'] as const
 
   for (const type of types) {
     it(`has config for ${type}`, () => {

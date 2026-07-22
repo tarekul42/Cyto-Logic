@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ToastProvider, useToast } from '../components/Toast'
 
-function TestButton({ message = 'Test message', type = 'success' } = {}) {
+function TestButton({ message = 'Test message', type = 'success' }: { message?: string; type?: string } = {}) {
   const toast = useToast()
   return <button onClick={() => toast(message, type)}>Show Toast</button>
 }
