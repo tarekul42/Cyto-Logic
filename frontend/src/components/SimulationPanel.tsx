@@ -27,24 +27,26 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
 
   const handleSimulate = async () => {
     if (!logic) return;
-    const t0 = Number(tStart)
-    const t1 = Number(tEnd)
-    const dtVal = Number(dt)
+    const t0 = Number(tStart);
+    const t1 = Number(tEnd);
+    const dtVal = Number(dt);
+
     if (isNaN(t0) || isNaN(t1) || isNaN(dtVal)) {
       setError('Invalid simulation parameters');
       toast('Invalid simulation parameters', 'error');
-      return
+      return;
     }
     if (t0 >= t1) {
       setError('tEnd must be greater than tStart');
       toast('tEnd must be greater than tStart', 'error');
-      return
+      return;
     }
     if (dtVal <= 0) {
       setError('dt must be positive');
       toast('dt must be positive', 'error');
-      return
+      return;
     }
+
     setIsSimulating(true);
     setError(null);
     try {
@@ -65,17 +67,15 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     }
   };
 
-  const chartData: { time: number; [species: string]: number }[] | undefined = simResult?.times?.map((t, i) => {
-    const point: { time: number; [species: string]: number } = { time: t };
+  const chartData = simResult?.times?.map((t, i) => {
+    const point: Record<string, number> = { time: t };
     if (simResult.trajectories) {
-      Object.entries(simResult.trajectories).forEach(([sp, vals]) => {
-        point[sp] = vals[i];
-      });
+      for (const [species, values] of Object.entries(simResult.trajectories)) {
+        point[species] = values[i];
+      }
     }
     return point;
   });
-
-  const inputFieldClass = 'text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none font-mono'
 
   return (
     <div>
@@ -96,15 +96,15 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
         <label className="text-small text-text-secondary flex items-center gap-1">
           t:
           <input type="number" value={tStart} onChange={(e) => setTStart(Number(e.target.value))}
-            className={`${inputFieldClass} w-14 px-1.5 py-1`} />
+            className="text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none w-14 px-1.5 py-1" />
           <span className="text-text-tertiary">&ndash;</span>
           <input type="number" value={tEnd} onChange={(e) => setTEnd(Number(e.target.value))}
-            className={`${inputFieldClass} w-14 px-1.5 py-1`} />
+            className="text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none w-14 px-1.5 py-1" />
         </label>
         <label className="text-small text-text-secondary flex items-center gap-1">
           dt:
           <input type="number" step="0.1" value={dt} onChange={(e) => setDt(Number(e.target.value))}
-            className={`${inputFieldClass} w-[48px] px-1.5 py-1`} />
+            className="text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none w-[48px] px-1.5 py-1" />
         </label>
       </div>
 
@@ -164,10 +164,6 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
           <div className="text-small text-text-tertiary">Run a simulation to see time-series data</div>
         </div>
       )}
-      <style>{`
-        .simulate-btn { transition: background 0.15s ease; }
-        .simulate-btn:hover:not(:disabled) { background: var(--color-primary-dim) !important; }
-      `}</style>
     </div>
   );
 }

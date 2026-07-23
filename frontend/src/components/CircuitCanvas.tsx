@@ -48,7 +48,7 @@ function compileLabel(status: string, isCompiling: boolean): string {
 interface CircuitCanvasProps {
   loadedCircuit: { nodes: Node[]; edges: Edge[] } | null
   onCircuitChange: (nodes: Node[], edges: Edge[]) => void
-  onResult: (result: CompileResult) => void
+  onResult: (compileResult: CompileResult) => void
 }
 
 export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult }: CircuitCanvasProps) {
@@ -167,8 +167,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
 
   const onDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    const type = event.dataTransfer.getData('application/reactflow');
-    if (!type || !reactFlowInstance) return;
+    const nodeType = event.dataTransfer.getData('application/reactflow');
+    if (!nodeType || !reactFlowInstance) return;
 
     const position = reactFlowInstance.screenToFlowPosition({
       x: event.clientX,
@@ -181,8 +181,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       type: 'gateNode',
       position,
       data: {
-        type,
-        label: type === 'INPUT' ? 'Input' : type === 'OUTPUT' ? 'Output' : `${type} Gate`,
+        type: nodeType,
+        label: nodeType === 'INPUT' ? 'Input' : nodeType === 'OUTPUT' ? 'Output' : `${nodeType} Gate`,
       },
     }));
   }, [setNodes, reactFlowInstance, pushHistory]);
@@ -197,6 +197,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     : compileStatus === 'error'
     ? 'var(--color-error)'
     : 'var(--color-primary)';
+
+  const emptyCanvas = nodes.length === 0 && edges.length === 0;
 
   return (
     <div className="w-full h-full relative bg-canvas" ref={reactFlowWrapper}>
@@ -219,16 +221,16 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
           <>
             <button
               onClick={() => setConfirmClear(true)}
-              className="canvas-tool-btn bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-small text-text-secondary px-3.5 py-1.5"
+              className="bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-small text-text-secondary px-3.5 py-1.5 hover:border-text-tertiary"
             >
               + New Circuit
             </button>
             <button onClick={undo} title="Undo (Ctrl+Z)"
-              className="canvas-tool-btn bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5">
+              className="bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5 hover:border-text-tertiary">
               {ICON.UNDO}
             </button>
             <button onClick={redo} title="Redo (Ctrl+Shift+Z)"
-              className="canvas-tool-btn bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5">
+              className="bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5 hover:border-text-tertiary">
               {ICON.REDO}
             </button>
           </>
@@ -251,8 +253,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         <MiniMap
           className="!bg-panel !border !border-border !rounded-card !shadow-card !overflow-hidden"
           nodeColor={(node) => {
-            const data = node.data as { type?: string }
-            const cfg = data.type ? gateConfig[data.type] : undefined;
+            const cfg = node.data?.type ? gateConfig[node.data.type as string] : undefined;
             return cfg ? cfg.border : 'var(--color-text-tertiary)';
           }}
           nodeBorderRadius={4}
@@ -261,6 +262,15 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         />
         <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="var(--color-border)" />
       </ReactFlow>
+
+      {emptyCanvas && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-5">
+          <div className="text-center">
+            <div className="text-[40px] text-border-light mb-2">{ICON.EMPTY_BOX}</div>
+            <div className="text-text-tertiary text-small">Drag gates from the palette to start building</div>
+          </div>
+        </div>
+      )}
 
       <button
         onClick={handleCompile}
@@ -274,13 +284,6 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         {isCompiling && <Spinner />}
         {compileLabel(compileStatus, isCompiling)}
       </button>
-
-      <style>{`
-        .canvas-tool-btn { transition: border-color 0.15s ease; }
-        .canvas-tool-btn:hover { border-color: var(--color-text-tertiary) !important; }
-        .compile-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-        .compile-btn:hover:not(:disabled) { transform: scale(1.03); box-shadow: var(--shadow-glow); }
-      `}</style>
     </div>
   );
 }

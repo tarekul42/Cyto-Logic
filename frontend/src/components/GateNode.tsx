@@ -1,31 +1,18 @@
-import { useState, useRef, useEffect, type CSSProperties } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { gateConfig } from '../theme';
 
 interface GateNodeData {
   type: string
   label: string
-  onLabelChange?: (id: string, label: string) => void
+  onLabelChange?: (nodeId: string, newLabel: string) => void
 }
 
-const INPUT_STYLE: CSSProperties = {
-  width: '100%', marginTop: 6, padding: '3px 6px',
-  textAlign: 'center',
-  background: 'var(--color-input)',
-  border: '1px solid var(--color-primary)',
-  borderRadius: 'var(--radius-input)',
-  color: 'var(--color-text-primary)',
-  outline: 'none',
-  boxSizing: 'border-box',
-  fontFamily: 'var(--font-body)',
-}
-
-export default function GateNode({ id, data }: NodeProps) {
-  const typed = data as unknown as GateNodeData
+export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
   const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState(typed.label);
+  const [editValue, setEditValue] = useState(data.label);
   const inputRef = useRef<HTMLInputElement>(null);
-  const cfg = gateConfig[typed.type] || gateConfig.INPUT;
+  const cfg = gateConfig[data.type] || gateConfig.INPUT;
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -36,15 +23,15 @@ export default function GateNode({ id, data }: NodeProps) {
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditValue(typed.label);
+    setEditValue(data.label);
     setEditing(true);
   };
 
   const handleFinishEdit = () => {
     setEditing(false);
     const trimmed = editValue.trim();
-    if (trimmed && trimmed !== typed.label) {
-      typed.onLabelChange?.(id, trimmed);
+    if (trimmed && trimmed !== data.label) {
+      data.onLabelChange?.(id, trimmed);
     }
   };
 
@@ -53,11 +40,11 @@ export default function GateNode({ id, data }: NodeProps) {
     if (e.key === 'Escape') setEditing(false);
   };
 
-  const isNot = typed.type === 'NOT';
-  const isOutput = typed.type === 'OUTPUT';
-  const isInput = typed.type === 'INPUT';
+  const isNot = data.type === 'NOT';
+  const isOutput = data.type === 'OUTPUT';
+  const isInput = data.type === 'INPUT';
 
-  const br = isInput
+  const borderRadius = isInput
     ? 'rounded-tl-lg rounded-bl-lg rounded-tr-[4px] rounded-br-[4px]'
     : isOutput
     ? 'rounded-tr-lg rounded-br-lg rounded-tl-[4px] rounded-bl-[4px]'
@@ -65,7 +52,7 @@ export default function GateNode({ id, data }: NodeProps) {
 
   return (
     <div
-      className={`${br} px-[18px] py-2.5 min-w-[120px] text-center cursor-grab shadow-node font-body relative transition-all duration-150`}
+      className={`${borderRadius} px-[18px] py-2.5 min-w-[120px] text-center cursor-grab shadow-node font-body relative`}
       style={{
         background: `linear-gradient(145deg, ${cfg.bg}, ${cfg.bg}dd)`,
         border: `1.5px solid ${cfg.border}`,
@@ -110,7 +97,7 @@ export default function GateNode({ id, data }: NodeProps) {
           {cfg.icon}
         </span>
         <span className="font-bold text-node-type text-text-primary tracking-[0.3px]">
-          {typed.type}
+          {data.type}
         </span>
       </div>
 
@@ -121,13 +108,12 @@ export default function GateNode({ id, data }: NodeProps) {
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleFinishEdit}
           onKeyDown={handleKeyDown}
-          className="text-node-label"
-          style={INPUT_STYLE}
           onClick={(e) => e.stopPropagation()}
+          className="text-node-label w-full mt-1.5 px-1.5 py-0.5 text-center bg-input border border-primary rounded-input text-text-primary outline-none font-body"
         />
       ) : (
         <div className="text-node-label text-text-secondary mt-1 font-normal">
-          {typed.label}
+          {data.label}
         </div>
       )}
 

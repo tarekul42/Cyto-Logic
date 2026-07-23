@@ -70,17 +70,17 @@ export const compileFromGraph = async (nodes: Node[], edges: Edge[], signal?: Ab
 export const simulateCircuit = async (
   logic: string,
   inputs: Record<string, number> = {},
-  t_span: number[] = [0, 100],
+  tSpan: number[] = [0, 100],
   dt: number = 1.0,
   signal?: AbortSignal
 ): Promise<SimResult> => {
-  const payload: SimulationPayload = { logic, inputs, t_span, dt }
+  const payload: SimulationPayload = { logic, inputs, t_span: tSpan, dt }
   const response = await axios.post(`${API_BASE}/simulate`, payload, { timeout: 60000, signal });
   return response.data as SimResult;
 };
 
-const _downloadBlob = async (url: string, data: ExportPayload, filename: string, mimeType: string, signal?: AbortSignal): Promise<void> => {
-  const response = await axios.post(url, data, {
+async function downloadBlob(url: string, postPayload: ExportPayload, filename: string, mimeType: string, signal?: AbortSignal): Promise<void> {
+  const response = await axios.post(url, postPayload, {
     responseType: 'blob',
     timeout: 30000,
     signal
@@ -89,35 +89,35 @@ const _downloadBlob = async (url: string, data: ExportPayload, filename: string,
   const contentType = String(response.headers['content-type'] || '');
   if (contentType.includes('application/json')) {
     const text = await new Response(response.data).text();
-    const err = JSON.parse(text);
-    throw new CompileError(err.error || 'Export failed', 'EXPORT_ERROR');
+    const apiError = JSON.parse(text);
+    throw new CompileError(apiError.error || 'Export failed', 'EXPORT_ERROR');
   }
 
   const blob = new Blob([response.data as BlobPart], { type: mimeType });
   const blobUrl = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = blobUrl;
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
+  const downloadLink = document.createElement('a');
+  downloadLink.href = blobUrl;
+  downloadLink.setAttribute('download', filename);
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
 
   setTimeout(() => {
-    link.remove();
+    downloadLink.remove();
     window.URL.revokeObjectURL(blobUrl);
   }, 100);
 };
 
 export const exportSBOL = async (parts: Part[], circuitName: string, signal?: AbortSignal): Promise<void> => {
   const payload: ExportPayload = { parts, name: circuitName }
-  await _downloadBlob(`${API_BASE}/export/sbol`, payload, `${circuitName || 'my_circuit'}.xml`, 'application/xml', signal);
+  await downloadBlob(`${API_BASE}/export/sbol`, payload, `${circuitName || 'my_circuit'}.xml`, 'application/xml', signal);
 };
 
 export const exportDNA = async (logic: string, circuitName: string, signal?: AbortSignal): Promise<void> => {
   const payload: ExportPayload = { logic, name: circuitName }
-  await _downloadBlob(`${API_BASE}/export/dna`, payload, `${circuitName || 'circuit'}.fa`, 'text/plain', signal);
+  await downloadBlob(`${API_BASE}/export/dna`, payload, `${circuitName || 'circuit'}.fa`, 'text/plain', signal);
 };
 
 export const exportSVG = async (logic: string, circuitName: string, signal?: AbortSignal): Promise<void> => {
   const payload: ExportPayload = { logic, name: circuitName }
-  await _downloadBlob(`${API_BASE}/export/svg`, payload, `${circuitName || 'circuit'}.svg`, 'image/svg+xml', signal);
+  await downloadBlob(`${API_BASE}/export/svg`, payload, `${circuitName || 'circuit'}.svg`, 'image/svg+xml', signal);
 };

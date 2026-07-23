@@ -40,15 +40,7 @@ export class StorageError extends Error {
 }
 
 export function getErrorMessage(error: unknown): string {
-  if (error instanceof CircuitError) return error.message
-  if (error instanceof CompileError) return error.message
-  if (error instanceof NetworkError) return error.message
-  if (error instanceof StorageError) return error.message
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
   return 'An unexpected error occurred'
-}
-
-export function isNetworkError(error: unknown): error is NetworkError {
-  return error instanceof NetworkError
 }

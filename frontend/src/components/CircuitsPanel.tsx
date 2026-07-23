@@ -3,6 +3,8 @@ import { useToast } from './Toast'
 import type { Node, Edge } from '@xyflow/react'
 import { ICON } from '../constants'
 import { StorageError } from '../errors'
+import { TEMPLATES } from '../lib/circuitTemplates'
+import type { CircuitTemplate } from '../lib/circuitTemplates'
 
 const STORAGE_KEY = 'cyto-logic-circuits'
 
@@ -12,43 +14,6 @@ interface SavedCircuit {
   edges: Edge[]
   savedAt: number
 }
-
-interface Template {
-  name: string
-  nodes: Node[]
-  edges: Edge[]
-}
-
-const TEMPLATES: Template[] = [
-  { name: 'AND Gate', nodes: [
-    { id: 't1', type: 'gateNode', position: { x: 80, y: 160 }, data: { type: 'INPUT', label: 'aTc' } },
-    { id: 't2', type: 'gateNode', position: { x: 80, y: 280 }, data: { type: 'INPUT', label: 'AraC' } },
-    { id: 't3', type: 'gateNode', position: { x: 300, y: 220 }, data: { type: 'AND', label: 'AND gate' } },
-    { id: 't4', type: 'gateNode', position: { x: 520, y: 220 }, data: { type: 'OUTPUT', label: 'GFP' } },
-  ], edges: [
-    { id: 'te1', source: 't1', target: 't3', targetHandle: 'a', animated: true },
-    { id: 'te2', source: 't2', target: 't3', targetHandle: 'b', animated: true },
-    { id: 'te3', source: 't3', target: 't4', animated: true },
-  ]},
-  { name: 'NOT Gate', nodes: [
-    { id: 'tn1', type: 'gateNode', position: { x: 80, y: 200 }, data: { type: 'INPUT', label: 'Input' } },
-    { id: 'tn2', type: 'gateNode', position: { x: 300, y: 200 }, data: { type: 'NOT', label: 'Inverter' } },
-    { id: 'tn3', type: 'gateNode', position: { x: 520, y: 200 }, data: { type: 'OUTPUT', label: 'Output' } },
-  ], edges: [
-    { id: 'tne1', source: 'tn1', target: 'tn2', animated: true },
-    { id: 'tne2', source: 'tn2', target: 'tn3', animated: true },
-  ]},
-  { name: 'OR Gate', nodes: [
-    { id: 'to1', type: 'gateNode', position: { x: 80, y: 160 }, data: { type: 'INPUT', label: 'A' } },
-    { id: 'to2', type: 'gateNode', position: { x: 80, y: 280 }, data: { type: 'INPUT', label: 'B' } },
-    { id: 'to3', type: 'gateNode', position: { x: 300, y: 220 }, data: { type: 'OR', label: 'OR gate' } },
-    { id: 'to4', type: 'gateNode', position: { x: 520, y: 220 }, data: { type: 'OUTPUT', label: 'Output' } },
-  ], edges: [
-    { id: 'toe1', source: 'to1', target: 'to3', targetHandle: 'a', animated: true },
-    { id: 'toe2', source: 'to2', target: 'to3', targetHandle: 'b', animated: true },
-    { id: 'toe3', source: 'to3', target: 'to4', animated: true },
-  ]},
-]
 
 interface CircuitsPanelProps {
   nodes: Node[]
@@ -62,8 +27,11 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
   const [showTemplates, setShowTemplates] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [savedCircuits, setSavedCircuits] = useState<SavedCircuit[]>(() => {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as SavedCircuit[] }
-    catch { return [] }
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as SavedCircuit[]
+    } catch {
+      return []
+    }
   })
 
   const persistSaved = (list: SavedCircuit[]) => {
@@ -104,7 +72,7 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
     toast(`Deleted "${name}"`, 'info')
   }
 
-  const handleTemplate = (t: Template) => {
+  const handleTemplate = (t: CircuitTemplate) => {
     onLoad(t.nodes, t.edges)
     toast(`Loaded "${t.name}" template`, 'info')
   }
@@ -120,7 +88,7 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
         <div className="px-outer py-2">
           {TEMPLATES.map((t) => (
             <button key={t.name} onClick={() => handleTemplate(t)}
-              className="circuit-btn w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer transition-[background] duration-150">
+              className="w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer hover:bg-surface-alt">
               {t.name}
             </button>
           ))}
@@ -151,21 +119,17 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
           {savedCircuits.map((c) => (
             <div key={c.name} className="flex gap-1 mb-1">
               <button onClick={() => handleLoad(c)}
-                className="circuit-btn flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer transition-[background] duration-150">
+                className="flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer hover:bg-surface-alt">
                 {c.name}
               </button>
               <button onClick={() => handleDelete(c.name)}
-                className="delete-btn px-2 py-1.5 bg-transparent border border-border rounded-input cursor-pointer text-section text-text-tertiary">
+                className="px-2 py-1.5 bg-transparent border border-border rounded-input cursor-pointer text-section text-text-tertiary hover:text-danger">
                 {ICON.DELETE}
               </button>
             </div>
           ))}
         </div>
       )}
-      <style>{`
-        .circuit-btn:hover { background: var(--color-surface-alt) !important; }
-        .delete-btn:hover { color: var(--color-danger) !important; }
-      `}</style>
     </div>
   )
 }
