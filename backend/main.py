@@ -1,20 +1,3 @@
-"""
-Core responsibility
-----------------------------------------------------
-Run the complete compilation pipeline from one place.
-This file is only used for local testing while
-building the compiler. It sends a program through
-every stage and prints the intermediate results,
-making it easier to check that each module works.
-
-Design note
-----------------------------------------------------
-I kept this separate from the compiler modules.
-The lexer, parser and mapper should never contain
-testing code. Keeping the runner outside the compiler
-makes it easier to reuse the same modules later in
-the web application.
-"""
 from compiler.lexer import BioLexer
 from compiler.parser import BioParser
 from compiler.gate_mapper import BioGateMapper
@@ -54,7 +37,7 @@ def run_compiler(source_code):
         print(f"Circuit Complexity Score: {result['complexity']}")
         print("\nSynthesized DNA BioBrick Sequence:")
 
-        # Showing the parts in order makes it easier to compare different compiler outputs.
+        # Parts ordered 5'->3' as they'd appear on the assembled construct
         for index, part in enumerate(result["dna_parts_list"], 1):
             role_upper = part["role"].upper()
             print(f"  {index}. [{role_upper:<10}] -> ID: {part['id']:<12} | Info: {part['info']}")
@@ -67,7 +50,5 @@ def run_compiler(source_code):
 
 
 if __name__ == "__main__":
-    # Simple program that I use while testing the compilation pipeline.
     sample_program = "IF (aTc AND AraC) -> GFP"
-    
     run_compiler(sample_program)

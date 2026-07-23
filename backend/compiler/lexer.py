@@ -1,17 +1,3 @@
-"""
-Core responsibility
-------------------------------------------------------------
-Turns the input logic into a stream of tokens.
-I decided to keep the lexer very small.
-The parser should be responsible for grammar rules,
-while the lexer only recognizes symbols and keywords.
-
-Design Note
--------------------------------------------------------------
-Instead of using regular expressions,I wrote this lexer as a character-by-character scanner.
-Later I want to support richer biological syntax
-without rewriting the lexer.
-"""
 class Token:
     def __init__(self, token_type, value, pos):
         self.type = token_type
@@ -25,13 +11,7 @@ class Token:
 class BioLexer:
     # Reserved words.
     # Everything else becomes an IDENTIFIER.
-    keywords = {
-        'IF': 'IF',
-        'AND': 'AND',
-        'OR': 'OR',
-        'NOT': 'NOT'
-    }
-    # Keeping these separate makes the identifier rule easier to change later.
+    keywords = {'IF': 'IF', 'AND': 'AND', 'OR': 'OR', 'NOT': 'NOT'}
     letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_"
     digits = "0123456789"
 
@@ -43,7 +23,6 @@ class BioLexer:
         self.char = self.text[self.idx] if len(text) > 0 else None
 
     def move(self):
-        # One helper instead of repeating index updates everywhere.
         self.idx += 1
 
         if self.idx < len(self.text):

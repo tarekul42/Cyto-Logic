@@ -1,24 +1,4 @@
-"""
-Core responsibility
------------------------------------------------
-Store the biological parts used by the compiler.
-The mapper looks up this file whenever it needs
-to translate a logic gate into real genetic parts.
-For now I only included a small collection of
-commonly used BioBrick components. More parts
-can be added without changing the compiler itself.
-
-Design note
-----------------------------------------------------
-I wanted all biological data in one place instead
-of mixing it with compiler code.
-This file is only a reference database.
-It does not contain any compilation logic.
-Keeping the data separate made it easier to update
-part information without touching the mapper.
-"""
-
-# Input molecules and regulatory proteins that can appear inside a logic program.
+# Input molecules and regulatory proteins
 BIOMOLECULES = {
     "aTc": {
         "id": "BBa_K145001", 
@@ -126,12 +106,6 @@ REPORTERS = {
         "info": "Beta-galactosidase reporter"
     }
 }
-
-"""
-Small lookup table describing a few known
-regulatory relationships. It is not used by
-the parser and is only biological knowledge.
-"""
 
 ADDITIONAL_PARTS = {
     "BBa_B0032": {"role": "RBS",      "info": "Medium strength RBS"},
