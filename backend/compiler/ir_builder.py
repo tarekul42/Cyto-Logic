@@ -37,6 +37,12 @@ class IRBuilder:
                 f"Custom CDS for {out_name}",
             )
 
+        ir.add_part(
+            "BBa_B0015",
+            "terminator",
+            "Double terminator",
+        )
+
         return ir
 
     def _next_id(self):

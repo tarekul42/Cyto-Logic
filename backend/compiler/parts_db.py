@@ -75,27 +75,22 @@ GATES_DB = {
     "NOT": [
         {"id": "BBa_R0040", "role": "promoter", "info": "TetR repressible promoter (pTet)"},
         {"id": "BBa_B0034", "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015", "role": "terminator", "info": "Double terminator"}
     ],
     "AND": [
         {"id": "BBa_K1847000", "role": "promoter", "info": "AND gate promoter (Split-activator responsive)"},
         {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015",    "role": "terminator", "info": "Double terminator"}
     ],
     "OR": [
         {"id": "BBa_K1847001", "role": "promoter", "info": "OR gate dual promoter"},
         {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015",    "role": "terminator", "info": "Double terminator"}
     ],
     "NAND": [
         {"id": "BBa_K1847002", "role": "promoter", "info": "NAND gate promoter (repressor cascade)"},
         {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015",    "role": "terminator", "info": "Double terminator"}
     ],
     "NOR": [
         {"id": "BBa_K1847003", "role": "promoter", "info": "NOR gate dual repressor promoter"},
         {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015",    "role": "terminator", "info": "Double terminator"}
     ]
 }
 # Reporter proteins are treated separately because they represent the final observable output.

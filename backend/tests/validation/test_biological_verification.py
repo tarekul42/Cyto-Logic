@@ -84,12 +84,17 @@ class TestBiologicalVerification:
                 f"{gate_name} gate missing RBS (BBa_B0034)"
             )
 
-    def test_terminator_present_in_all_gates(self):
-        for gate_name, parts in GATES_DB.items():
-            part_ids = [p["id"] for p in parts]
-            assert "BBa_B0015" in part_ids, (
-                f"{gate_name} gate missing terminator (BBa_B0015)"
-            )
+    def test_terminator_present_in_final_ir(self):
+        from compiler.ir_builder import IRBuilder
+        from compiler.ast_node import ProteinNode, AndGate, Circuit
+        ast = Circuit(
+            condition=AndGate(ProteinNode("aTc"), ProteinNode("AraC")),
+            output=ProteinNode("GFP"),
+        )
+        ir = IRBuilder(logic_statement="aTc AND AraC").build(ast)
+        part_ids = [p["id"] for p in ir.parts_deduplicated()]
+        assert "BBa_B0015" in part_ids, "Final circuit IR missing terminator (BBa_B0015)"
+        assert part_ids[-1] == "BBa_B0015", "Terminator must be the last part in the sequence"
 
     def test_regulatory_map_has_expected_keys(self):
         from compiler.parts_db import REGULATORY_MAP
