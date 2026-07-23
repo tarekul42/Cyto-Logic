@@ -77,7 +77,7 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
     toast(`Loaded "${t.name}" template`, 'info')
   }
 
-  const sectionHeaderClass = 'text-section font-bold text-text-tertiary uppercase cursor-pointer select-none px-outer py-2 border-b border-border transition-[color] duration-150 hover:text-text-secondary tracking-[5px]'
+  const sectionHeaderClass = 'text-[11px] font-bold text-text-tertiary uppercase cursor-pointer select-none px-4 py-2 border-b border-border transition-[color] duration-150 hover:text-text-secondary tracking-[5px]'
 
   return (
     <div className="border-t border-border mt-auto">
@@ -85,10 +85,10 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
         {showTemplates ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Templates
       </div>
       {showTemplates && (
-        <div className="px-outer py-2">
+        <div className="px-4 py-2">
           {TEMPLATES.map((t) => (
             <button key={t.name} onClick={() => handleTemplate(t)}
-              className="w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer hover:bg-surface-alt">
+              className="w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded text-[11px] text-text-secondary cursor-pointer hover:bg-surface-alt">
               {t.name}
             </button>
           ))}
@@ -99,31 +99,31 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
         {showSaved ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Saved
       </div>
       {showSaved && (
-        <div className="px-outer py-2 max-h-[200px] overflow-y-auto">
+        <div className="px-4 py-2 max-h-[200px] overflow-y-auto">
           <div className="flex gap-1 mb-2">
             <input value={saveName} onChange={(e) => setSaveName(e.target.value)}
               placeholder="Circuit name"
-              className="flex-1 px-2 py-1.5 text-small bg-input border border-input-border rounded-input text-text-primary outline-none font-body"
+              className="flex-1 px-2 py-1.5 text-[11px] bg-input border border-input-border rounded text-text-primary outline-none font-body"
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             />
             <button onClick={handleSave}
-              className="px-2.5 py-1.5 bg-primary text-text-primary border-none rounded-input cursor-pointer text-small font-semibold whitespace-nowrap">
+              className="px-2.5 py-1.5 bg-primary text-text-primary border-none rounded cursor-pointer text-[11px] font-semibold whitespace-nowrap">
               Save
             </button>
           </div>
           {savedCircuits.length === 0 && (
-            <div className="text-section text-text-tertiary text-center py-2">
+            <div className="text-[11px] text-text-tertiary text-center py-2">
               No saved circuits
             </div>
           )}
           {savedCircuits.map((c) => (
             <div key={c.name} className="flex gap-1 mb-1">
               <button onClick={() => handleLoad(c)}
-                className="flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer hover:bg-surface-alt">
+                className="flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded text-[11px] text-text-secondary cursor-pointer hover:bg-surface-alt">
                 {c.name}
               </button>
               <button onClick={() => handleDelete(c.name)}
-                className="px-2 py-1.5 bg-transparent border border-border rounded-input cursor-pointer text-section text-text-tertiary hover:text-danger">
+                className="px-2 py-1.5 bg-transparent border border-border rounded cursor-pointer text-[11px] text-text-tertiary hover:text-danger">
                 {ICON.DELETE}
               </button>
             </div>

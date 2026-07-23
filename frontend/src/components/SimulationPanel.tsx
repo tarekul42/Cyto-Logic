@@ -82,7 +82,7 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
       <button
         onClick={handleSimulate}
         disabled={isSimulating || !logic}
-        className="simulate-btn w-full px-2.5 py-2.5 mb-3 text-body font-semibold text-text-primary border-none rounded-button flex items-center justify-center gap-2 shadow-button"
+        className="simulate-btn w-full px-2.5 py-2.5 mb-3 text-[13px] font-semibold text-text-primary border-none rounded-md flex items-center justify-center gap-2 shadow-lg"
         style={{
           background: isSimulating || !logic ? 'var(--color-surface)' : 'var(--color-primary)',
           cursor: isSimulating || !logic ? 'not-allowed' : 'pointer',
@@ -93,25 +93,25 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
       </button>
 
       <div className="flex gap-2 mb-3 items-center flex-wrap">
-        <label className="text-small text-text-secondary flex items-center gap-1">
+        <label className="text-[11px] text-text-secondary flex items-center gap-1">
           t:
           <input type="number" value={tStart} onChange={(e) => setTStart(Number(e.target.value))}
-            className="text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none w-14 px-1.5 py-1" />
+            className="text-[11px] font-mono bg-input border border-input-border rounded text-text-primary text-center outline-none w-14 px-1.5 py-1" />
           <span className="text-text-tertiary">&ndash;</span>
           <input type="number" value={tEnd} onChange={(e) => setTEnd(Number(e.target.value))}
-            className="text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none w-14 px-1.5 py-1" />
+            className="text-[11px] font-mono bg-input border border-input-border rounded text-text-primary text-center outline-none w-14 px-1.5 py-1" />
         </label>
-        <label className="text-small text-text-secondary flex items-center gap-1">
+        <label className="text-[11px] text-text-secondary flex items-center gap-1">
           dt:
           <input type="number" step="0.1" value={dt} onChange={(e) => setDt(Number(e.target.value))}
-            className="text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none w-[48px] px-1.5 py-1" />
+            className="text-[11px] font-mono bg-input border border-input-border rounded text-text-primary text-center outline-none w-[48px] px-1.5 py-1" />
         </label>
       </div>
 
       {error && <ErrorBox>{error}</ErrorBox>}
 
       {chartData && chartData.length > 0 && (
-        <div className="bg-surface rounded-card p-2.5">
+        <div className="bg-surface rounded-lg p-2.5">
           <SectionHeader className="!tracking-[4px]">
             Time-series ({simResult?.num_points} points)
           </SectionHeader>
@@ -124,7 +124,7 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
                 contentStyle={{
                   background: 'var(--color-panel)',
                   border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-input)',
+                  borderRadius: '4px',
                   fontSize: 11,
                 }}
                 labelStyle={{ color: 'var(--color-text-secondary)' }}
@@ -150,7 +150,7 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
                   <span className="size-2 rounded-full inline-block" style={{
                     background: CHART_COLORS[i % CHART_COLORS.length],
                   }} />
-                  <span className="text-small text-text-secondary font-mono">{sp}</span>
+                  <span className="text-[11px] text-text-secondary font-mono">{sp}</span>
                 </div>
               ))}
             </div>
@@ -159,9 +159,9 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
       )}
 
       {!simResult && !error && (
-        <div className="bg-surface border border-dashed border-border rounded-card p-6 text-center">
+        <div className="bg-surface border border-dashed border-border rounded-lg p-6 text-center">
           <div className="text-[28px] mb-1.5 text-text-tertiary">{ICON.SPINNER}</div>
-          <div className="text-small text-text-tertiary">Run a simulation to see time-series data</div>
+          <div className="text-[11px] text-text-tertiary">Run a simulation to see time-series data</div>
         </div>
       )}
     </div>

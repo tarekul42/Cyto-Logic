@@ -21,7 +21,7 @@ export default function OutputPanel({ result }: OutputPanelProps) {
 
   if (result === null) {
     return (
-      <div className="p-outer text-text-tertiary text-small text-center flex-1 flex items-center justify-center">
+      <div className="p-4 text-text-tertiary text-[11px] text-center flex-1 flex items-center justify-center">
         <div>
           <div className="text-[32px] mb-2 text-border-light">{ICON.EMPTY_BOX}</div>
           <div>Compile a circuit to see results</div>
@@ -32,9 +32,9 @@ export default function OutputPanel({ result }: OutputPanelProps) {
 
   if (!result.success) {
     return (
-      <div className="p-outer text-small flex-1">
+      <div className="p-4 text-[11px] flex-1">
         <div
-          className="rounded-card px-3.5 py-2.5 font-bold"
+          className="rounded-lg px-3.5 py-2.5 font-bold"
           style={{
             color: 'var(--color-error)',
             background: 'color-mix(in srgb, var(--color-error) 7%, transparent)',
@@ -76,15 +76,15 @@ export default function OutputPanel({ result }: OutputPanelProps) {
   const outputCount = result.nodes?.filter((n) => n.type === 'OUTPUT').length;
 
   return (
-    <div className="p-inner text-text-primary flex flex-col flex-1 overflow-hidden">
+    <div className="p-3 text-text-primary flex flex-col flex-1 overflow-hidden">
       <div className="flex gap-2 mb-3">
-        <div className="flex-1 bg-surface rounded-card px-2.5 py-2">
+        <div className="flex-1 bg-surface rounded-lg px-2.5 py-2">
           <SectionHeader className="!tracking-[3px] !mb-0.5">Output</SectionHeader>
           <div className="text-[15px] font-semibold mt-0.5 text-primary font-mono">
             {result.output_protein || 'N/A'}
           </div>
         </div>
-        <div className="flex-1 bg-surface rounded-card px-2.5 py-2">
+        <div className="flex-1 bg-surface rounded-lg px-2.5 py-2">
           <SectionHeader className="!tracking-[3px] !mb-0.5">Parts</SectionHeader>
           <div className="text-[15px] font-semibold mt-0.5 text-text-primary">
             {result.parts?.length || 0}
@@ -93,7 +93,7 @@ export default function OutputPanel({ result }: OutputPanelProps) {
       </div>
 
       {(nodeCount > 0 || edgeCount > 0) && (
-        <div className="text-small text-text-tertiary mb-3 px-2.5 py-1.5 bg-surface rounded-input flex gap-3">
+        <div className="text-[11px] text-text-tertiary mb-3 px-2.5 py-1.5 bg-surface rounded flex gap-3">
           <span>{PLURAL(nodeCount, 'node')}</span>
           <span>{PLURAL(edgeCount, 'edge')}</span>
           {inputCount != null && <span>{PLURAL(inputCount, 'input')}</span>}
@@ -104,7 +104,7 @@ export default function OutputPanel({ result }: OutputPanelProps) {
       <div className="flex mb-3">
         <button
           onClick={() => setActiveTab('parts')}
-          className="flex-1 py-2.5 text-center text-section font-bold uppercase tracking-[3px] cursor-pointer"
+          className="flex-1 py-2.5 text-center text-[11px] font-bold uppercase tracking-[3px] cursor-pointer"
           style={{
             color: activeTab === 'parts' ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
             borderBottom: activeTab === 'parts' ? '2px solid var(--color-primary)' : '2px solid transparent',
@@ -114,7 +114,7 @@ export default function OutputPanel({ result }: OutputPanelProps) {
         </button>
         <button
           onClick={() => setActiveTab('simulation')}
-          className="flex-1 py-2.5 text-center text-section font-bold uppercase tracking-[3px] cursor-pointer"
+          className="flex-1 py-2.5 text-center text-[11px] font-bold uppercase tracking-[3px] cursor-pointer"
           style={{
             color: activeTab === 'simulation' ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
             borderBottom: activeTab === 'simulation' ? '2px solid var(--color-primary)' : '2px solid transparent',
@@ -129,8 +129,8 @@ export default function OutputPanel({ result }: OutputPanelProps) {
           <div className="flex-1 overflow-y-auto pr-1">
             {result.parts?.map((part, index) => (
               <div key={index}
-                className="flex justify-between items-center bg-surface-alt border border-border rounded-input px-2.5 py-1.5 mb-1 text-small">
-                <span className="font-mono text-primary text-small">{part.id}</span>
+                className="flex justify-between items-center bg-surface-alt border border-border rounded px-2.5 py-1.5 mb-1 text-[11px]">
+                <span className="font-mono text-primary text-[11px]">{part.id}</span>
                 {part.role && (
                   <span className="text-[9px] font-bold uppercase tracking-[1px] rounded-sm px-1.5 py-0.5"
                     style={{
@@ -144,7 +144,7 @@ export default function OutputPanel({ result }: OutputPanelProps) {
               </div>
             ))}
             {(!result.parts || result.parts.length === 0) && (
-              <div className="text-small text-text-tertiary text-center mt-2.5">
+              <div className="text-[11px] text-text-tertiary text-center mt-2.5">
                 No parts found in this circuit.
               </div>
             )}
@@ -156,19 +156,19 @@ export default function OutputPanel({ result }: OutputPanelProps) {
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
               disabled={isExporting !== null}
-              className="w-full px-2.5 py-2.5 rounded-button text-small font-bold bg-primary text-text-primary border-none flex items-center justify-center gap-1.5 uppercase tracking-[3px] shadow-button"
+              className="w-full px-2.5 py-2.5 rounded-md text-[11px] font-bold bg-primary text-text-primary border-none flex items-center justify-center gap-1.5 uppercase tracking-[3px] shadow-lg"
               style={{ cursor: isExporting !== null ? 'not-allowed' : 'pointer' }}
             >
               {isExporting !== null ? `Exporting ${isExporting}...` : `Export ${ICON.EXPAND_DOWN}`}
             </button>
 
             {showExportMenu && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 bg-panel border border-border rounded-card shadow-lift overflow-hidden z-20">
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-panel border border-border rounded-lg shadow-lift overflow-hidden z-20">
                 {exportOptions.map(({ label, fn, icon }) => (
                   <button
                     key={label}
                     onClick={() => handleExport(fn, label)}
-                    className="w-full px-3.5 py-2 text-small font-semibold bg-transparent text-text-secondary flex items-center gap-1.5"
+                    className="w-full px-3.5 py-2 text-[11px] font-semibold bg-transparent text-text-secondary flex items-center gap-1.5"
                     style={{ cursor: isExporting !== null ? 'not-allowed' : 'pointer' }}
                   >
                     <span className="font-mono text-text-tertiary">{icon}</span>

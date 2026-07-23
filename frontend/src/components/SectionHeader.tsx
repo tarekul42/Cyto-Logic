@@ -7,7 +7,7 @@ interface SectionHeaderProps {
 
 export default function SectionHeader({ children, className }: SectionHeaderProps) {
   return (
-    <div className={`text-section font-bold text-text-tertiary mb-3 uppercase tracking-[6px] ${className ?? ''}`}>
+    <div className={`text-[11px] font-bold text-text-tertiary mb-3 uppercase tracking-[6px] ${className ?? ''}`}>
       {children}
     </div>
   )

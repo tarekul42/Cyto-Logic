@@ -72,7 +72,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
-              className="bg-panel rounded-card px-3.5 py-2.5 text-body text-text-primary shadow-lift flex items-center gap-2.5 cursor-pointer"
+              className="bg-panel rounded-lg px-3.5 py-2.5 text-[13px] text-text-primary shadow-lift flex items-center gap-2.5 cursor-pointer"
               style={{ border: `1px solid ${accent}`, borderLeft: `4px solid ${accent}` }}
               onClick={() => removeToast(t.id)}
             >

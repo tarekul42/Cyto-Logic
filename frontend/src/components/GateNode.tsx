@@ -52,7 +52,7 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
 
   return (
     <div
-      className={`${borderRadius} px-[18px] py-2.5 min-w-[120px] text-center cursor-grab shadow-node font-body relative`}
+      className={`${borderRadius} px-[18px] py-2.5 min-w-[120px] text-center cursor-grab shadow-md font-body relative`}
       style={{
         background: `linear-gradient(145deg, ${cfg.bg}, ${cfg.bg}dd)`,
         border: `1.5px solid ${cfg.border}`,
@@ -63,7 +63,7 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
         e.currentTarget.style.borderColor = 'var(--color-primary)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = 'var(--shadow-node)'
+        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)'
         e.currentTarget.style.borderColor = cfg.border
       }}
     >
@@ -93,10 +93,10 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
       )}
 
       <div className="flex items-center justify-center gap-1.5">
-        <span className="text-badge font-bold text-text-secondary font-mono tracking-[1px] opacity-70">
+        <span className="text-[10px] font-bold text-text-secondary font-mono tracking-[1px] opacity-70">
           {cfg.icon}
         </span>
-        <span className="font-bold text-node-type text-text-primary tracking-[0.3px]">
+        <span className="font-bold text-sm text-text-primary tracking-[0.3px]">
           {data.type}
         </span>
       </div>
@@ -109,10 +109,10 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
           onBlur={handleFinishEdit}
           onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
-          className="text-node-label w-full mt-1.5 px-1.5 py-0.5 text-center bg-input border border-primary rounded-input text-text-primary outline-none font-body"
+          className="text-xs w-full mt-1.5 px-1.5 py-0.5 text-center bg-input border border-primary rounded text-text-primary outline-none font-body"
         />
       ) : (
-        <div className="text-node-label text-text-secondary mt-1 font-normal">
+        <div className="text-xs text-text-secondary mt-1 font-normal">
           {data.label}
         </div>
       )}

@@ -205,14 +205,14 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       <div className="absolute top-3 left-3 z-10 flex gap-2 items-center">
         {confirmClear ? (
           <>
-            <span className="text-small text-text-secondary">Clear all?</span>
+            <span className="text-[11px] text-text-secondary">Clear all?</span>
             <button onClick={handleClearConfirm}
-              className="text-text-primary border-none rounded-button cursor-pointer font-semibold shadow-button text-small px-3 py-1.5"
+              className="text-text-primary border-none rounded-md cursor-pointer font-semibold shadow-lg text-[11px] px-3 py-1.5"
               style={{ background: 'var(--color-danger)' }}>
               Yes, clear
             </button>
             <button onClick={() => setConfirmClear(false)}
-              className="text-text-primary border-none rounded-button cursor-pointer font-semibold shadow-button text-small px-3 py-1.5"
+              className="text-text-primary border-none rounded-md cursor-pointer font-semibold shadow-lg text-[11px] px-3 py-1.5"
               style={{ background: 'var(--color-surface)' }}>
               Cancel
             </button>
@@ -221,16 +221,16 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
           <>
             <button
               onClick={() => setConfirmClear(true)}
-              className="bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-small text-text-secondary px-3.5 py-1.5 hover:border-text-tertiary"
+              className="bg-transparent border border-border-light rounded-md cursor-pointer font-semibold shadow-lg text-[11px] text-text-secondary px-3.5 py-1.5 hover:border-text-tertiary"
             >
               + New Circuit
             </button>
             <button onClick={undo} title="Undo (Ctrl+Z)"
-              className="bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5 hover:border-text-tertiary">
+              className="bg-transparent border border-border-light rounded-md cursor-pointer font-semibold shadow-lg text-[10px] text-text-tertiary font-mono px-2.5 py-1.5 hover:border-text-tertiary">
               {ICON.UNDO}
             </button>
             <button onClick={redo} title="Redo (Ctrl+Shift+Z)"
-              className="bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5 hover:border-text-tertiary">
+              className="bg-transparent border border-border-light rounded-md cursor-pointer font-semibold shadow-lg text-[10px] text-text-tertiary font-mono px-2.5 py-1.5 hover:border-text-tertiary">
               {ICON.REDO}
             </button>
           </>
@@ -251,7 +251,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         proOptions={{ hideAttribution: true }}
       >
         <MiniMap
-          className="!bg-panel !border !border-border !rounded-card !shadow-card !overflow-hidden"
+          className="!bg-panel !border !border-border !rounded-lg !shadow-md !overflow-hidden"
           nodeColor={(node) => {
             const cfg = node.data?.type ? gateConfig[node.data.type as string] : undefined;
             return cfg ? cfg.border : 'var(--color-text-tertiary)';
@@ -267,7 +267,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-5">
           <div className="text-center">
             <div className="text-[40px] text-border-light mb-2">{ICON.EMPTY_BOX}</div>
-            <div className="text-text-tertiary text-small">Drag gates from the palette to start building</div>
+            <div className="text-text-tertiary text-[11px]">Drag gates from the palette to start building</div>
           </div>
         </div>
       )}
@@ -275,10 +275,10 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       <button
         onClick={handleCompile}
         disabled={isCompiling}
-        className="compile-btn absolute top-3 right-3 z-10 text-text-primary border-none rounded-button cursor-pointer font-semibold flex items-center gap-2 px-5 py-2.5"
+        className="compile-btn absolute top-3 right-3 z-10 text-text-primary border-none rounded-md cursor-pointer font-semibold flex items-center gap-2 px-5 py-2.5"
         style={{
           background: compileStatus === 'compiling' ? 'var(--color-surface)' : btnColor,
-          boxShadow: compileStatus === 'idle' ? 'var(--shadow-glow)' : 'var(--shadow-button)',
+          boxShadow: compileStatus === 'idle' ? 'var(--shadow-glow)' : 'var(--shadow-lg)',
         }}
       >
         {isCompiling && <Spinner />}

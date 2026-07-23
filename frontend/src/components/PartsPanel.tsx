@@ -16,7 +16,7 @@ export default function PartsPanel() {
   };
 
   return (
-    <div className="p-outer bg-panel flex-1 overflow-y-auto">
+    <div className="p-4 bg-panel flex-1 overflow-y-auto">
       <SectionHeader>Gates</SectionHeader>
 
       {Object.entries(gateConfig).map(([type, cfg]) => (
@@ -24,7 +24,7 @@ export default function PartsPanel() {
           key={type}
           draggable
           onDragStart={(e) => onDragStart(e, type)}
-          className="parts-gate flex items-center gap-3 select-none cursor-grab px-3.5 py-3 mb-2 rounded-card"
+          className="parts-gate flex items-center gap-3 select-none cursor-grab px-3.5 py-3 mb-2 rounded-lg"
           style={{
             background: cfg.bg,
             border: `1px solid ${cfg.border}`,
@@ -40,10 +40,10 @@ export default function PartsPanel() {
               <circle cx="10" cy="11" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
             </svg>
           </div>
-          <span className="text-badge font-bold text-text-secondary font-mono uppercase tracking-[1px] w-9">
+          <span className="text-[10px] font-bold text-text-secondary font-mono uppercase tracking-[1px] w-9">
             {cfg.icon}
           </span>
-          <span className="text-body font-semibold text-text-primary">
+          <span className="text-[13px] font-semibold text-text-primary">
             {cfg.label}
           </span>
         </div>

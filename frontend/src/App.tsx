@@ -28,11 +28,11 @@ export default function App() {
   return (
     <ToastProvider>
     <div className="h-screen flex font-body bg-canvas text-text-primary">
-      <div className="w-sidebar flex-shrink-0 border-r border-border bg-panel flex flex-col">
-        <div className="flex items-center gap-gap px-outer py-inner border-b border-border"
+      <div className="w-[220px] flex-shrink-0 border-r border-border bg-panel flex flex-col">
+        <div className="flex items-center gap-[10px] px-4 py-3 border-b border-border"
           style={{ background: 'linear-gradient(135deg, var(--color-panel) 0%, #0d1a2a 100%)' }}>
-          <img src="/cyto_logic.png" alt="Cyto Logic" className="size-[30px]" />
-          <span className="text-brand font-semibold text-text-primary font-brand tracking-[0.5px]">
+          <img src="/cyto_logic.png" alt="Cyto Logic" className="size-logo" />
+          <span className="text-xl font-semibold text-text-primary font-brand tracking-wide">
             cyto logic
           </span>
         </div>
@@ -55,8 +55,8 @@ export default function App() {
         </ReactFlowProvider>
       </div>
 
-      <div className="w-results flex-shrink-0 border-l border-border bg-panel flex flex-col">
-        <div className="flex items-center gap-gap px-outer py-inner border-b border-border">
+      <div className="w-[320px] flex-shrink-0 border-l border-border bg-panel flex flex-col">
+        <div className="flex items-center gap-[10px] px-4 py-3 border-b border-border">
           <SectionHeader className="mb-0">Results</SectionHeader>
         </div>
         <OutputPanel result={result} />
