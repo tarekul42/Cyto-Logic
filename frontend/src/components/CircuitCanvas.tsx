@@ -11,6 +11,8 @@ import {
   type Node,
   type Edge,
   type Connection,
+  type NodeProps,
+  type NodeTypes,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import GateNode from './GateNode';
@@ -24,7 +26,7 @@ import { ICON } from '../constants';
 
 export type { Node, Edge }
 
-const nodeTypes = { gateNode: GateNode };
+const nodeTypes: NodeTypes = { gateNode: GateNode as React.ComponentType<NodeProps> };
 
 const initialNodes: Node[] = [
   { id: '1', type: 'gateNode', position: { x: 80,  y: 120 }, data: { type: 'INPUT',  label: 'aTc' } },
@@ -251,7 +253,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         proOptions={{ hideAttribution: true }}
       >
         <MiniMap
-          className="!bg-panel !border !border-border !rounded-lg !shadow-md !overflow-hidden"
+          className="bg-panel! border! border-border! rounded-lg! shadow-md! overflow-hidden!"
           nodeColor={(node) => {
             const cfg = node.data?.type ? gateConfig[node.data.type as string] : undefined;
             return cfg ? cfg.border : 'var(--color-text-tertiary)';

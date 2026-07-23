@@ -79,13 +79,13 @@ export default function OutputPanel({ result }: OutputPanelProps) {
     <div className="p-3 text-text-primary flex flex-col flex-1 overflow-hidden">
       <div className="flex gap-2 mb-3">
         <div className="flex-1 bg-surface rounded-lg px-2.5 py-2">
-          <SectionHeader className="!tracking-[3px] !mb-0.5">Output</SectionHeader>
+          <SectionHeader className="tracking-[3px]! mb-0.5!">Output</SectionHeader>
           <div className="text-[15px] font-semibold mt-0.5 text-primary font-mono">
             {result.output_protein || 'N/A'}
           </div>
         </div>
         <div className="flex-1 bg-surface rounded-lg px-2.5 py-2">
-          <SectionHeader className="!tracking-[3px] !mb-0.5">Parts</SectionHeader>
+          <SectionHeader className="tracking-[3px]! mb-0.5!">Parts</SectionHeader>
           <div className="text-[15px] font-semibold mt-0.5 text-text-primary">
             {result.parts?.length || 0}
           </div>

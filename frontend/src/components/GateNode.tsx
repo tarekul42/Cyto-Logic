@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { gateConfig } from '../theme';
 
-interface GateNodeData {
+interface GateNodeData extends Record<string, unknown> {
   type: string
   label: string
   onLabelChange?: (nodeId: string, newLabel: string) => void
 }
 
-export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
+export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(data.label);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +52,7 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
 
   return (
     <div
-      className={`${borderRadius} px-[18px] py-2.5 min-w-[120px] text-center cursor-grab shadow-md font-body relative`}
+      className={`${borderRadius} px-4.5 py-2.5 min-w-30 text-center cursor-grab shadow-md font-body relative`}
       style={{
         background: `linear-gradient(145deg, ${cfg.bg}, ${cfg.bg}dd)`,
         border: `1.5px solid ${cfg.border}`,
@@ -71,7 +71,7 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
         <>
           <Handle
             type="target" position={Position.Left} id="a"
-            className="!size-2.5 !rounded-full"
+            className="size-2.5! rounded-full!"
             style={{
               top: isNot ? '50%' : '30%',
               background: 'var(--color-text-secondary)',
@@ -81,7 +81,7 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
           {!isNot && (
             <Handle
               type="target" position={Position.Left} id="b"
-              className="!size-2.5 !rounded-full"
+              className="size-2.5! rounded-full!"
               style={{
                 top: '70%',
                 background: 'var(--color-text-secondary)',
@@ -120,7 +120,7 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
       {!isOutput && (
         <Handle
           type="source" position={Position.Right}
-          className="!size-2.5 !rounded-full"
+          className="size-2.5! rounded-full!"
           style={{
             background: 'var(--color-primary)',
             border: '2px solid var(--color-panel)',

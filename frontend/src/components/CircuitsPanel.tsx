@@ -99,7 +99,7 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
         {showSaved ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Saved
       </div>
       {showSaved && (
-        <div className="px-4 py-2 max-h-[200px] overflow-y-auto">
+        <div className="px-4 py-2 max-h-50 overflow-y-auto">
           <div className="flex gap-1 mb-2">
             <input value={saveName} onChange={(e) => setSaveName(e.target.value)}
               placeholder="Circuit name"
