@@ -26,7 +26,7 @@ class SBOLBackend(Backend):
             "terminator": "http://identifiers.org/SO:0000141",
         }
 
-        for idx, item in enumerate(cir.parts_deduplicated()):
+        for idx, item in enumerate(cir.all_parts):
             unique_id = (
                 f"{safe_name}_{item.get('id', 'part')}_{idx}"
                 .replace("-", "_")

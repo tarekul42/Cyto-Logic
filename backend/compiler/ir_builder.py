@@ -24,6 +24,9 @@ class IRBuilder:
         self._traverse(circuit_ast.condition, ir)
 
         out_name = circuit_ast.output.name
+        ir.add_part(
+            "BBa_B0034", "RBS", "Strong RBS"
+        )
         if out_name in REPORTERS:
             ir.add_part(
                 REPORTERS[out_name]["id"],

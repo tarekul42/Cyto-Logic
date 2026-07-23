@@ -17,7 +17,7 @@ class SVGBackend(Backend):
     def generate(self, cir, title="Circuit Diagram"):
         nodes_dict = dict(cir._nodes.items()) if hasattr(cir, '_nodes') else dict(cir.nodes)
         edges = list(cir._edges) if hasattr(cir, '_edges') else list(cir.edges)
-        parts = cir.parts_deduplicated()
+        parts = cir.all_parts
 
         levels, positions = self._layout(nodes_dict, edges)
 

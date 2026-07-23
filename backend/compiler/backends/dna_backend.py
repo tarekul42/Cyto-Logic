@@ -42,7 +42,7 @@ class DNABackend(Backend):
         return "DNA"
 
     def generate(self, cir, circuit_name="circuit"):
-        parts = cir.parts_deduplicated()
+        parts = cir.all_parts
         lines = [f">{circuit_name} complete construct"]
         construct = ""
         for part in parts:

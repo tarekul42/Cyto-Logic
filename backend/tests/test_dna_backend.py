@@ -57,13 +57,13 @@ class TestDNABackend:
         assert backend is not None
         assert backend.name == "DNA"
 
-    def test_parts_deduplication_respected(self):
+    def test_duplicate_parts_preserved_in_order(self):
         ir = CircuitIR()
         ir.add_part("BBa_E0040", "CDS", "GFP")
         ir.add_part("BBa_E0040", "CDS", "GFP")
         backend = DNABackend()
         fasta = backend.generate(ir)
-        assert fasta.count(">BBa_E0040") == 1
+        assert fasta.count(">BBa_E0040") == 2
 
     def test_circuit_name_in_construct_header(self):
         ir = CircuitIR()

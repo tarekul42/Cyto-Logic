@@ -24,6 +24,10 @@ class CircuitIR:
     def add_part(self, part_id, role, info):
         self._parts.append({"id": part_id, "role": role, "info": info})
 
+    @property
+    def all_parts(self):
+        return list(self._parts)
+
     def parts_deduplicated(self):
         seen = set()
         result = []
@@ -50,14 +54,14 @@ class CircuitIR:
         return {
             "circuit_structure": dict(self._nodes),
             "connections": list(self._edges),
-            "dna_parts_list": self.parts_deduplicated(),
+            "dna_parts_list": self.all_parts,
             "complexity": self.complexity,
         }
 
     def to_api_response(self):
         return {
             "logic": self.logic_statement,
-            "parts": self.parts_deduplicated(),
+            "parts": self.all_parts,
             "complexity_score": self.complexity,
             "output_protein": self.output_protein,
             "graph": {
