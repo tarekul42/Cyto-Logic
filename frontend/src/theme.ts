@@ -171,5 +171,3 @@ export const gateConfig: Record<string, GateConfig> = {
     border:  theme.color.nodeOutputBorder,
   },
 }
-
-export const spacer = (n: number): string => `${n * 4}px`

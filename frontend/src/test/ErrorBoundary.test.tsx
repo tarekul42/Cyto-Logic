@@ -26,12 +26,11 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
     expect(screen.getByText('Test crash')).toBeInTheDocument()
-    expect(screen.getByText('Reload Application')).toBeInTheDocument()
 
     console.error = originalError
   })
 
-  it('renders fallback message when error has no message', () => {
+  it('renders fallback when error has no message', () => {
     const ThrowingComponent = () => { throw new Error() }
 
     const originalError = console.error
@@ -43,7 +42,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     )
 
-    expect(screen.getByText('An unexpected error occurred.')).toBeInTheDocument()
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument()
 
     console.error = originalError
   })

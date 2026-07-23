@@ -3,7 +3,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ToastProvider, useToast } from '../components/Toast'
 
-function TestButton({ message = 'Test message', type = 'success' }: { message?: string; type?: string } = {}) {
+type ToastType = 'success' | 'error' | 'warning' | 'info'
+
+function TestButton({ message = 'Test message', type = 'success' }: { message?: string; type?: ToastType } = {}) {
   const toast = useToast()
   return <button onClick={() => toast(message, type)}>Show Toast</button>
 }

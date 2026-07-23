@@ -21,8 +21,8 @@ describe('compilerApi', () => {
 
   describe('compileFromGraph', () => {
     it('sends nodes and edges to /api/compile', async () => {
-      const nodes = [{ id: '1' }]
-      const edges = [{ id: 'e1' }]
+      const nodes = [{ id: '1', position: { x: 0, y: 0 }, data: {} }]
+      const edges = [{ id: 'e1', source: '1', target: '2' }]
       ;(axios.post as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { success: true } })
       const result = await compileFromGraph(nodes, edges)
       expect(axios.post).toHaveBeenCalledWith('/api/compile', { nodes, edges }, { timeout: 30000 })

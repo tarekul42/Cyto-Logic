@@ -1,3 +1,5 @@
+import os
+import re
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from compiler.parts_db import GATES_DB, BIOMOLECULES, REPORTERS
@@ -6,9 +8,18 @@ from compiler.pipeline import CompilerPipeline
 from compiler.middleware import setup_logging, rate_limit, validate_input
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "http://localhost:4173",
-                   "http://127.0.0.1:5173"])
+CORS(app, origins=os.environ.get(
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173"
+).split(","))
 setup_logging(app)
+
+
+def sanitize_filename(name, default="export"):
+    """Strip unsafe characters from a filename component."""
+    cleaned = re.sub(r'[^\w.-]', '_', name)
+    return cleaned if cleaned else default
+
 
 def graph_to_logic(nodes, edges):
     if not nodes:
@@ -40,7 +51,7 @@ def graph_to_logic(nodes, edges):
         n['data'].get('label') for n in nodes
         if n['data'].get('type') == 'INPUT'
            and n['id'] not in active_targets
-           and n['id'] in active_sources
+           and n['id'] not in active_sources
     ]
     if orphan_inputs:
         app.logger.warning(
@@ -102,6 +113,11 @@ def process_circuit_compilation():
     statement = payload.get('logic')
 
     if not statement:
+        if len(payload.get('nodes', [])) > 500 or len(payload.get('edges', [])) > 500:
+            return jsonify({
+                "success": False,
+                "error": "Circuit graph too large (max 500 nodes or edges)."
+            }), 400
         try:
             statement = graph_to_logic(
                 payload.get('nodes', []),
@@ -145,9 +161,9 @@ def process_circuit_compilation():
 @app.route('/api/export/sbol', methods=['POST'])
 @rate_limit
 def handle_sbol_download():
-    payload = request.get_json()
+    payload = request.get_json() or {}
     target_parts = payload.get('parts', [])
-    project_title = payload.get('name', 'untitled')
+    project_title = sanitize_filename(payload.get('name', 'untitled'))
 
     if not isinstance(target_parts, list) or len(target_parts) > 500:
         return jsonify({
@@ -183,7 +199,7 @@ def handle_sbol_download():
 def handle_dna_export():
     payload = request.get_json() or {}
     statement = payload.get('logic')
-    project_title = payload.get('name', 'circuit')
+    project_title = sanitize_filename(payload.get('name', 'circuit'), 'circuit')
 
     try:
         if statement:
@@ -223,7 +239,7 @@ def handle_dna_export():
 def handle_svg_export():
     payload = request.get_json() or {}
     statement = payload.get('logic')
-    project_title = payload.get('name', 'Circuit Diagram')
+    project_title = sanitize_filename(payload.get('name', 'Circuit_Diagram'), 'Circuit_Diagram')
 
     try:
         if statement:
@@ -369,4 +385,5 @@ def handle_optimization():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug, port=int(os.environ.get("PORT", 5000)))

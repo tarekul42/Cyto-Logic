@@ -124,6 +124,28 @@ Or with raw parts:
 
 **Response:** `text/plain` FASTA file download.
 
+### `POST /api/export/svg`
+
+Export circuit as an SVG diagram.
+
+**Request:**
+```json
+{
+  "logic": "IF aTc -> GFP",
+  "name": "my_circuit"
+}
+```
+
+Or with raw parts:
+```json
+{
+  "parts": [{"id": "BBa_E0040", "role": "CDS", "info": "GFP"}],
+  "name": "my_circuit"
+}
+```
+
+**Response:** `image/svg+xml` file download. Max 500 parts per request.
+
 ### `GET /api/parts`
 
 List all known biological parts.

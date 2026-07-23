@@ -1,13 +1,29 @@
-import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react'
-import { theme } from '../theme'
+import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
+import { ICON } from '../constants'
+
+type ToastType = 'success' | 'error' | 'warning' | 'info'
+
+const TOAST_ICON: Record<ToastType, string> = {
+  success: ICON.CHECK,
+  error: ICON.CROSS,
+  warning: ICON.WARNING,
+  info: ICON.INFO,
+}
+
+const TOAST_VAR: Record<ToastType, string> = {
+  success: 'var(--color-success)',
+  error: 'var(--color-error)',
+  warning: 'var(--color-warning)',
+  info: 'var(--color-secondary)',
+}
 
 interface ToastItem {
   id: number
   message: string
-  type: string
+  type: ToastType
 }
 
-type ToastFn = (message: string, type?: string, duration?: number) => number | undefined
+type ToastFn = (message: string, type?: ToastType, duration?: number) => number | undefined
 
 const ToastContext = createContext<ToastFn | null>(null)
 
@@ -17,7 +33,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
   const timers = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
 
-  const addToast = useCallback((message: string, type = 'info', duration = 3000) => {
+  useEffect(() => {
+    return () => {
+      for (const id of Object.keys(timers.current)) {
+        clearTimeout(timers.current[Number(id)])
+      }
+      timers.current = {}
+    }
+  }, [])
+
+  const addToast = useCallback((message: string, type: ToastType = 'info', duration = 3000): number => {
     const id = ++toastId
     setToasts((prev) => [...prev, { id, message, type }])
     timers.current[id] = setTimeout(() => {
@@ -35,56 +60,30 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const toast = useCallback((message: string, type?: string, duration?: number) => addToast(message, type, duration), [addToast])
-
-  const colors: Record<string, string> = {
-    success: theme.color.success,
-    error: theme.color.error,
-    warning: theme.color.warning,
-    info: theme.color.secondary,
-  }
+  const toast = useCallback((message: string, type?: ToastType, duration?: number): number | undefined =>
+    addToast(message, type, duration), [addToast])
 
   return (
     <ToastContext.Provider value={toast}>
       {children}
-      <div style={{
-        position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
-        display: 'flex', flexDirection: 'column', gap: 8,
-        maxWidth: 360,
-      }}>
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            style={{
-              background: theme.color.panel,
-              border: `1px solid ${colors[t.type] || colors.info}`,
-              borderLeft: `4px solid ${colors[t.type] || colors.info}`,
-              borderRadius: theme.size.radius.card,
-              padding: '10px 14px',
-              fontSize: theme.size.font.body,
-              color: theme.color.textPrimary,
-              boxShadow: theme.shadow.lift,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              animation: 'toastIn 0.25s ease-out',
-              cursor: 'pointer',
-            }}
-            onClick={() => removeToast(t.id)}
-          >
-            <span style={{ color: colors[t.type] || colors.info, fontWeight: 700, flexShrink: 0 }}>
-              {t.type === 'success' ? '\u2713' : t.type === 'error' ? '\u2717' : t.type === 'warning' ? '\u26A0' : '\u2139'}
-            </span>
-            <span style={{ flex: 1 }}>{t.message}</span>
-          </div>
-        ))}
+      <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 max-w-[360px]">
+        {toasts.map((t) => {
+          const accent = TOAST_VAR[t.type]
+          return (
+            <div
+              key={t.id}
+              className="bg-panel rounded-card px-3.5 py-2.5 text-body text-text-primary shadow-lift flex items-center gap-2.5 cursor-pointer"
+              style={{ border: `1px solid ${accent}`, borderLeft: `4px solid ${accent}` }}
+              onClick={() => removeToast(t.id)}
+            >
+              <span className="font-bold flex-shrink-0" style={{ color: accent }}>
+                {TOAST_ICON[t.type]}
+              </span>
+              <span className="flex-1">{t.message}</span>
+            </div>
+          )
+        })}
       </div>
-      <style>{`
-        @keyframes toastIn {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </ToastContext.Provider>
   )
 }

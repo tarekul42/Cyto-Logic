@@ -1,81 +1,89 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { MockedFunction } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { userEvent } from '@testing-library/user-event'
 import { ReactFlowProvider } from '@xyflow/react'
 import CircuitCanvas from '../components/CircuitCanvas'
 import { ToastProvider } from '../components/Toast'
-import * as api from '../api/compilerApi'
+import type { ReactNode } from 'react'
+import { compileFromGraph } from '../api/compilerApi'
+import type { CompileResult } from '../api/compilerApi'
 
 vi.mock('../api/compilerApi', () => ({
   compileFromGraph: vi.fn(),
 }))
 
-function renderInFlow(ui) {
+const mockCompile = compileFromGraph as MockedFunction<typeof compileFromGraph>
+
+function renderInFlow(ui: ReactNode) {
   return render(<ReactFlowProvider><ToastProvider>{ui}</ToastProvider></ReactFlowProvider>)
 }
 
-describe('CircuitCanvas', () => {
+function renderCanvas() {
   const onResult = vi.fn()
+  const onCircuitChange = vi.fn()
+  renderInFlow(<CircuitCanvas onResult={onResult} onCircuitChange={onCircuitChange} loadedCircuit={null} />)
+  return { onResult, onCircuitChange }
+}
 
+const successResult: CompileResult = { success: true, output_protein: 'GFP', parts: [] }
+
+describe('CircuitCanvas', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
   it('renders compile button', () => {
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
+    renderCanvas()
     expect(screen.getByText('Compile')).toBeInTheDocument()
   })
 
   it('renders new circuit button', () => {
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
+    renderCanvas()
     expect(screen.getByText('+ New Circuit')).toBeInTheDocument()
   })
 
   it('shows compile status text while compiling', async () => {
-    const user = userEvent.setup()
-    api.compileFromGraph.mockImplementation(() => new Promise(() => {}))
+    mockCompile.mockImplementation(() => new Promise(() => {}))
+    renderCanvas()
 
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
-    await user.click(screen.getByText('Compile'))
+    await userEvent.click(screen.getByText('Compile'))
 
     expect(screen.getByText('Compiling...')).toBeInTheDocument()
   })
 
   it('calls compileFromGraph and onResult on compile', async () => {
-    const user = userEvent.setup()
-    api.compileFromGraph.mockResolvedValue({ success: true, output_protein: 'GFP', parts: [] })
+    mockCompile.mockResolvedValue(successResult)
+    const { onResult } = renderCanvas()
 
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
-    await user.click(screen.getByText('Compile'))
+    await userEvent.click(screen.getByText('Compile'))
 
-    expect(api.compileFromGraph).toHaveBeenCalled()
+    expect(compileFromGraph).toHaveBeenCalled()
     expect(onResult).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
   })
 
   it('handles compilation error', async () => {
-    const user = userEvent.setup()
-    api.compileFromGraph.mockRejectedValue(new Error('Server error'))
+    mockCompile.mockRejectedValue(new Error('Server error'))
+    const { onResult } = renderCanvas()
 
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
-    await user.click(screen.getByText('Compile'))
+    await userEvent.click(screen.getByText('Compile'))
 
     expect(onResult).toHaveBeenCalledWith({ success: false, error: 'Server error' })
   })
 
   it('shows success status after compile', async () => {
-    const user = userEvent.setup()
-    api.compileFromGraph.mockResolvedValue({ success: true, output_protein: 'GFP', parts: [] })
+    mockCompile.mockResolvedValue(successResult)
+    renderCanvas()
 
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
-    await user.click(screen.getByText('Compile'))
+    await userEvent.click(screen.getByText('Compile'))
 
     expect(await screen.findByText('\u2713 Compiled')).toBeInTheDocument()
   })
 
   it('shows confirmation when clicking + New Circuit', async () => {
-    const user = userEvent.setup()
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
-    await user.click(screen.getByText('+ New Circuit'))
+    renderCanvas()
+
+    await userEvent.click(screen.getByText('+ New Circuit'))
 
     expect(screen.getByText('Clear all?')).toBeInTheDocument()
     expect(screen.getByText('Yes, clear')).toBeInTheDocument()
@@ -83,16 +91,16 @@ describe('CircuitCanvas', () => {
   })
 
   it('cancels clear circuit', async () => {
-    const user = userEvent.setup()
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
-    await user.click(screen.getByText('+ New Circuit'))
-    await user.click(screen.getByText('Cancel'))
+    renderCanvas()
+
+    await userEvent.click(screen.getByText('+ New Circuit'))
+    await userEvent.click(screen.getByText('Cancel'))
 
     expect(screen.queryByText('Clear all?')).not.toBeInTheDocument()
   })
 
   it('renders the React Flow background', () => {
-    renderInFlow(<CircuitCanvas onResult={onResult} />)
+    renderCanvas()
     const container = document.querySelector('.react-flow')
     expect(container).toBeInTheDocument()
   })

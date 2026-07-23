@@ -4,12 +4,13 @@ import CircuitCanvas from './components/CircuitCanvas';
 import PartsPanel from './components/PartsPanel';
 import CircuitsPanel from './components/CircuitsPanel';
 import OutputPanel from './components/OutputPanel';
+import SectionHeader from './components/SectionHeader';
 import { ToastProvider } from './components/Toast';
-import { theme } from './theme';
 import type { Node, Edge } from '@xyflow/react';
+import type { CompileResult } from './api/compilerApi';
 
 export default function App() {
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [result, setResult] = useState<CompileResult | null>(null);
   const [circuitKey, setCircuitKey] = useState(0);
   const [loadedCircuit, setLoadedCircuit] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
   const [currentCircuit, setCurrentCircuit] = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] });
@@ -26,37 +27,12 @@ export default function App() {
 
   return (
     <ToastProvider>
-    <div style={{
-      display: 'flex',
-      height: '100vh',
-      fontFamily: theme.font.body,
-      background: theme.color.canvas,
-      color: theme.color.textPrimary,
-    }}>
-      <div style={{
-        width: theme.size.sidebar,
-        flexShrink: 0,
-        borderRight: `1px solid ${theme.color.border}`,
-        background: theme.color.panel,
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <div style={{
-          padding: `${theme.size.space.inner}px ${theme.size.space.outer}px`,
-          borderBottom: `1px solid ${theme.color.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: theme.size.space.gap,
-          background: `linear-gradient(135deg, ${theme.color.panel} 0%, #0d1a2a 100%)`,
-        }}>
-          <img src="/cyto_logic.png" alt="Cyto Logic" style={{ width: 30, height: 30 }} />
-          <span style={{
-            fontSize: theme.size.font.brand,
-            fontWeight: 600,
-            color: theme.color.textPrimary,
-            fontFamily: theme.font.brand,
-            letterSpacing: '0.5px',
-          }}>
+    <div className="h-screen flex font-body bg-canvas text-text-primary">
+      <div className="w-sidebar flex-shrink-0 border-r border-border bg-panel flex flex-col">
+        <div className="flex items-center gap-gap px-outer py-inner border-b border-border"
+          style={{ background: 'linear-gradient(135deg, var(--color-panel) 0%, #0d1a2a 100%)' }}>
+          <img src="/cyto_logic.png" alt="Cyto Logic" className="size-[30px]" />
+          <span className="text-brand font-semibold text-text-primary font-brand tracking-[0.5px]">
             cyto logic
           </span>
         </div>
@@ -68,7 +44,7 @@ export default function App() {
         />
       </div>
 
-      <div style={{ flex: 1, position: 'relative', background: theme.color.canvas }}>
+      <div className="flex-1 relative bg-canvas">
         <ReactFlowProvider>
           <CircuitCanvas
             key={circuitKey}
@@ -79,24 +55,9 @@ export default function App() {
         </ReactFlowProvider>
       </div>
 
-      <div style={{
-        width: theme.size.results,
-        flexShrink: 0,
-        borderLeft: `1px solid ${theme.color.border}`,
-        background: theme.color.panel,
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <div style={{
-          padding: `${theme.size.space.inner}px ${theme.size.space.outer}px`,
-          borderBottom: `1px solid ${theme.color.border}`,
-          fontSize: theme.size.font.section,
-          fontWeight: 700,
-          color: theme.color.textTertiary,
-          textTransform: 'uppercase',
-          letterSpacing: '6px',
-        }}>
-          Results
+      <div className="w-results flex-shrink-0 border-l border-border bg-panel flex flex-col">
+        <div className="flex items-center gap-gap px-outer py-inner border-b border-border">
+          <SectionHeader className="mb-0">Results</SectionHeader>
         </div>
         <OutputPanel result={result} />
       </div>

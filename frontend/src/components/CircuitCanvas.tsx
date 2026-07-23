@@ -6,22 +6,24 @@ import {
   useEdgesState,
   useReactFlow,
   Background,
+  BackgroundVariant,
   MiniMap,
   type Node,
   type Edge,
   type Connection,
-  type NodeChange,
-  type EdgeChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import GateNode from './GateNode';
+import Spinner from './Spinner';
 import { compileFromGraph } from '../api/compilerApi';
-import { theme, gateConfig } from '../theme';
+import type { CompileResult } from '../api/compilerApi';
+import { gateConfig } from '../theme';
 import { useToast } from './Toast';
+import { useCircuitHistory } from '../hooks/useCircuitHistory';
+import { ICON } from '../constants';
 
 export type { Node, Edge }
 
-const MAX_HISTORY = 50
 const nodeTypes = { gateNode: GateNode };
 
 const initialNodes: Node[] = [
@@ -37,21 +39,16 @@ const initialEdges: Edge[] = [
   { id: 'e3-4', source: '3', target: '4', animated: true },
 ];
 
-const btnBase: Record<string, string | number> = {
-  color: theme.color.textPrimary,
-  border: 'none',
-  borderRadius: theme.size.radius.button,
-  cursor: 'pointer',
-  fontSize: theme.size.font.body,
-  fontWeight: 600,
-  boxShadow: theme.shadow.button,
-  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-};
+function compileLabel(status: string, isCompiling: boolean): string {
+  if (status === 'success') return `${ICON.CHECK} Compiled`
+  if (status === 'error') return `${ICON.CROSS} Failed`
+  return isCompiling ? 'Compiling...' : 'Compile'
+}
 
 interface CircuitCanvasProps {
   loadedCircuit: { nodes: Node[]; edges: Edge[] } | null
   onCircuitChange: (nodes: Node[], edges: Edge[]) => void
-  onResult: (result: Record<string, unknown>) => void
+  onResult: (result: CompileResult) => void
 }
 
 export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult }: CircuitCanvasProps) {
@@ -65,38 +62,34 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
   const toast = useToast();
   const reactFlowInstance = useReactFlow();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const history = useRef<{ past: { nodes: Node[]; edges: Edge[] }[]; future: { nodes: Node[]; edges: Edge[] }[] }>({ past: [], future: [] });
+  const { pushHistory, undo: historyUndo, redo: historyRedo } = useCircuitHistory(nodes, edges);
+  const compileTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     onCircuitChange?.(nodes, edges)
   }, [nodes, edges, onCircuitChange])
 
-  const pushHistory = useCallback(() => {
-    const h = history.current
-    h.past.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
-    if (h.past.length > MAX_HISTORY) h.past.shift()
-    h.future = []
-  }, [nodes, edges])
+  useEffect(() => {
+    return () => {
+      if (compileTimer.current) clearTimeout(compileTimer.current)
+    }
+  }, [])
 
   const undo = useCallback(() => {
-    const h = history.current
-    if (h.past.length === 0) return
-    h.future.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
-    const prev = h.past.pop()!
-    setNodes(prev.nodes)
-    setEdges(prev.edges)
+    const snapshot = historyUndo()
+    if (!snapshot) return
+    setNodes(snapshot.nodes)
+    setEdges(snapshot.edges)
     toast('Undo', 'info', 1500)
-  }, [nodes, edges, setNodes, setEdges, toast])
+  }, [setNodes, setEdges, historyUndo, toast])
 
   const redo = useCallback(() => {
-    const h = history.current
-    if (h.future.length === 0) return
-    h.past.push({ nodes: structuredClone(nodes), edges: structuredClone(edges) })
-    const next = h.future.pop()!
-    setNodes(next.nodes)
-    setEdges(next.edges)
+    const snapshot = historyRedo()
+    if (!snapshot) return
+    setNodes(snapshot.nodes)
+    setEdges(snapshot.edges)
     toast('Redo', 'info', 1500)
-  }, [nodes, edges, setNodes, setEdges, toast])
+  }, [setNodes, setEdges, historyRedo, toast])
 
   const handleLabelChange = useCallback((nodeId: string, newLabel: string) => {
     pushHistory()
@@ -125,13 +118,13 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       onResult(result);
       setCompileStatus('success');
       toast('Circuit compiled successfully', 'success');
-      setTimeout(() => setCompileStatus('idle'), 1500);
+      compileTimer.current = setTimeout(() => setCompileStatus('idle'), 1500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Compilation failed';
       onResult({ success: false, error: message });
       setCompileStatus('error');
       toast('Compilation failed', 'error');
-      setTimeout(() => setCompileStatus('idle'), 2000);
+      compileTimer.current = setTimeout(() => setCompileStatus('idle'), 2000);
     } finally {
       setIsCompiling(false);
     }
@@ -199,22 +192,26 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const compileColor = compileStatus === 'success'
-    ? theme.color.success
+  const btnColor = compileStatus === 'success'
+    ? 'var(--color-success)'
     : compileStatus === 'error'
-    ? theme.color.error
-    : theme.color.primary;
+    ? 'var(--color-error)'
+    : 'var(--color-primary)';
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', background: theme.color.canvas }} ref={reactFlowWrapper}>
-      <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+    <div className="w-full h-full relative bg-canvas" ref={reactFlowWrapper}>
+      <div className="absolute top-3 left-3 z-10 flex gap-2 items-center">
         {confirmClear ? (
           <>
-            <span style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary }}>Clear all?</span>
-            <button onClick={handleClearConfirm} style={{ ...btnBase, background: theme.color.danger, padding: '6px 12px', fontSize: theme.size.font.small }}>
+            <span className="text-small text-text-secondary">Clear all?</span>
+            <button onClick={handleClearConfirm}
+              className="text-text-primary border-none rounded-button cursor-pointer font-semibold shadow-button text-small px-3 py-1.5"
+              style={{ background: 'var(--color-danger)' }}>
               Yes, clear
             </button>
-            <button onClick={() => setConfirmClear(false)} style={{ ...btnBase, background: theme.color.surface, padding: '6px 12px', fontSize: theme.size.font.small }}>
+            <button onClick={() => setConfirmClear(false)}
+              className="text-text-primary border-none rounded-button cursor-pointer font-semibold shadow-button text-small px-3 py-1.5"
+              style={{ background: 'var(--color-surface)' }}>
               Cancel
             </button>
           </>
@@ -222,52 +219,17 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
           <>
             <button
               onClick={() => setConfirmClear(true)}
-              style={{
-                ...btnBase,
-                background: 'transparent',
-                border: `1px solid ${theme.color.borderLight}`,
-                padding: '6px 14px',
-                fontSize: theme.size.font.small,
-                color: theme.color.textSecondary,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
+              className="canvas-tool-btn bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-small text-text-secondary px-3.5 py-1.5"
             >
               + New Circuit
             </button>
-            <button
-              onClick={undo}
-              title="Undo (Ctrl+Z)"
-              style={{
-                ...btnBase,
-                background: 'transparent',
-                border: `1px solid ${theme.color.borderLight}`,
-                padding: '6px 10px',
-                fontSize: theme.size.font.badge,
-                color: theme.color.textTertiary,
-                fontFamily: theme.font.mono,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
-            >
-              &#x21A9;
+            <button onClick={undo} title="Undo (Ctrl+Z)"
+              className="canvas-tool-btn bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5">
+              {ICON.UNDO}
             </button>
-            <button
-              onClick={redo}
-              title="Redo (Ctrl+Shift+Z)"
-              style={{
-                ...btnBase,
-                background: 'transparent',
-                border: `1px solid ${theme.color.borderLight}`,
-                padding: '6px 10px',
-                fontSize: theme.size.font.badge,
-                color: theme.color.textTertiary,
-                fontFamily: theme.font.mono,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = theme.color.textTertiary }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.color.borderLight }}
-            >
-              &#x21AA;
+            <button onClick={redo} title="Redo (Ctrl+Shift+Z)"
+              className="canvas-tool-btn bg-transparent border border-border-light rounded-button cursor-pointer font-semibold shadow-button text-badge text-text-tertiary font-mono px-2.5 py-1.5">
+              {ICON.REDO}
             </button>
           </>
         )}
@@ -276,8 +238,8 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       <ReactFlow
         nodes={nodesWithCallbacks}
         edges={edges}
-        onNodesChange={onNodesChange as (changes: NodeChange[]) => void}
-        onEdgesChange={onEdgesChange as (changes: EdgeChange[]) => void}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -287,69 +249,38 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
         proOptions={{ hideAttribution: true }}
       >
         <MiniMap
-          style={{
-            background: theme.color.panel,
-            border: `1px solid ${theme.color.border}`,
-            borderRadius: theme.size.radius.card,
-            boxShadow: theme.shadow.card,
-            overflow: 'hidden',
-          }}
+          className="!bg-panel !border !border-border !rounded-card !shadow-card !overflow-hidden"
           nodeColor={(node) => {
-            const data = node.data as { type: string }
-            const cfg = gateConfig[data.type];
-            return cfg ? cfg.border : theme.color.textTertiary;
+            const data = node.data as { type?: string }
+            const cfg = data.type ? gateConfig[data.type] : undefined;
+            return cfg ? cfg.border : 'var(--color-text-tertiary)';
           }}
           nodeBorderRadius={4}
           maskColor="rgba(11, 25, 38, 0.8)"
           pannable zoomable
         />
-        <Background variant="dots" gap={20} size={1.5} color={theme.color.border} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="var(--color-border)" />
       </ReactFlow>
 
       <button
         onClick={handleCompile}
         disabled={isCompiling}
+        className="compile-btn absolute top-3 right-3 z-10 text-text-primary border-none rounded-button cursor-pointer font-semibold flex items-center gap-2 px-5 py-2.5"
         style={{
-          ...btnBase,
-          position: 'absolute',
-          top: 12,
-          right: 12,
-          zIndex: 10,
-          padding: '10px 22px',
-          background: compileStatus === 'compiling' ? theme.color.surface : compileColor,
-          color: theme.color.textPrimary,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          boxShadow: compileStatus === 'idle' ? theme.shadow.glow : theme.shadow.button,
-        }}
-        onMouseEnter={(e) => {
-          if (!isCompiling) {
-            (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
-            (e.currentTarget as HTMLButtonElement).style.boxShadow = theme.shadow.glow;
-          }
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
-          (e.currentTarget as HTMLButtonElement).style.boxShadow = compileStatus === 'idle' ? theme.shadow.glow : theme.shadow.button;
+          background: compileStatus === 'compiling' ? 'var(--color-surface)' : btnColor,
+          boxShadow: compileStatus === 'idle' ? 'var(--shadow-glow)' : 'var(--shadow-button)',
         }}
       >
-        {isCompiling && (
-          <span style={{
-            display: 'inline-block', width: 14, height: 14,
-            border: '2px solid rgba(255,255,255,0.3)',
-            borderTopColor: theme.color.textPrimary,
-            borderRadius: '50%',
-            animation: 'spin 0.6s linear infinite',
-          }} />
-        )}
-        {compileStatus === 'success' ? '\u2713 Compiled'
-          : compileStatus === 'error' ? '\u2717 Failed'
-          : isCompiling ? 'Compiling...'
-          : 'Compile'}
+        {isCompiling && <Spinner />}
+        {compileLabel(compileStatus, isCompiling)}
       </button>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        .canvas-tool-btn { transition: border-color 0.15s ease; }
+        .canvas-tool-btn:hover { border-color: var(--color-text-tertiary) !important; }
+        .compile-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .compile-btn:hover:not(:disabled) { transform: scale(1.03); box-shadow: var(--shadow-glow); }
+      `}</style>
     </div>
   );
 }

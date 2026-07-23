@@ -11,7 +11,7 @@ pip install -r requirements.txt
 
 # Frontend
 cd frontend
-npm ci
+bun install
 ```
 
 ## Running
@@ -23,7 +23,7 @@ python app.py
 
 # Frontend (development)
 cd frontend
-npm run dev
+bun run dev
 ```
 
 The Vite dev server proxies `/api` requests to `http://localhost:5000`.
@@ -31,15 +31,35 @@ The Vite dev server proxies `/api` requests to `http://localhost:5000`.
 ## Testing
 
 ```bash
+# Backend
 cd backend
 pip install pytest
 python -m pytest tests/ -v
+
+# Frontend
+cd frontend
+bun run test
 ```
 
-Run specific test files:
+Run specific backend test files:
 ```bash
 python -m pytest tests/test_simulation.py -v
 python -m pytest tests/validation/test_repressilator.py -v
+```
+
+## Build
+
+```bash
+cd frontend
+bun run build
+```
+
+## Lint & Type check
+
+```bash
+cd frontend
+bun run lint     # ESLint
+bun run typecheck  # TypeScript
 ```
 
 ## Docker

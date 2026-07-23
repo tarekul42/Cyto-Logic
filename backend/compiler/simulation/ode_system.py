@@ -31,7 +31,8 @@ class ODESystem:
 
             if ntype == "input":
                 species.append(label)
-                rates[label] = _InputRate()
+                target = self._inputs.get(label, 1.0)
+                rates[label] = _InputRate(label, target=target)
             else:
                 input_labels = [
                     nodes[src]["label"]
@@ -69,8 +70,15 @@ class ODESystem:
 
 
 class _InputRate:
+    def __init__(self, name, target=1.0):
+        self._name = name
+        self._target = target
+
     def __call__(self, t, conc):
-        return 0.0
+        current = conc.get(self._name, 0.0)
+        target = self._target
+        delta = DEFAULT_DELTA
+        return degradation(target, delta)
 
 
 class _GateRate:

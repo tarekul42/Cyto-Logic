@@ -4,15 +4,16 @@ import userEvent from '@testing-library/user-event'
 import OutputPanel from '../components/OutputPanel'
 import { ToastProvider } from '../components/Toast'
 import type { ReactNode } from 'react'
+import type { CompileResult } from '../api/compilerApi'
 
-const mockResult: Record<string, unknown> = {
+const mockResult: CompileResult = {
   success: true,
   output_protein: 'GFP',
   parts: [
-    { id: 'BBa_R0010', role: 'promoter' },
-    { id: 'BBa_B0034', role: 'rbs' },
-    { id: 'BBa_E0040', role: 'cds' },
-    { id: 'BBa_B0015', role: 'terminator' },
+    { id: 'BBa_R0010', role: 'promoter', info: '' },
+    { id: 'BBa_B0034', role: 'rbs', info: '' },
+    { id: 'BBa_E0040', role: 'cds', info: '' },
+    { id: 'BBa_B0015', role: 'terminator', info: '' },
   ],
   logic: 'A AND B',
   nodes: [{ type: 'INPUT' }, { type: 'INPUT' }, { type: 'AND' }, { type: 'OUTPUT' }],
@@ -60,12 +61,10 @@ describe('OutputPanel', () => {
     expect(screen.getByText('BBa_E0040')).toBeInTheDocument()
     expect(screen.getByText('BBa_B0015')).toBeInTheDocument()
 
-    const badges = document.querySelectorAll('[style*="text-transform: uppercase"]')
-    const badgeTexts = Array.from(badges).map((b) => b.textContent)
-    expect(badgeTexts).toContain('promoter')
-    expect(badgeTexts).toContain('rbs')
-    expect(badgeTexts).toContain('cds')
-    expect(badgeTexts).toContain('terminator')
+    expect(screen.getByText('promoter')).toBeInTheDocument()
+    expect(screen.getByText('rbs')).toBeInTheDocument()
+    expect(screen.getByText('cds')).toBeInTheDocument()
+    expect(screen.getByText('terminator')).toBeInTheDocument()
   })
 
   it('shows parts tab by default with part IDs', () => {

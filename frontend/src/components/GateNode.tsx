@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type CSSProperties } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { theme, gateConfig } from '../theme';
+import { gateConfig } from '../theme';
 
 interface GateNodeData {
   type: string
@@ -8,11 +8,24 @@ interface GateNodeData {
   onLabelChange?: (id: string, label: string) => void
 }
 
-export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
+const INPUT_STYLE: CSSProperties = {
+  width: '100%', marginTop: 6, padding: '3px 6px',
+  textAlign: 'center',
+  background: 'var(--color-input)',
+  border: '1px solid var(--color-primary)',
+  borderRadius: 'var(--radius-input)',
+  color: 'var(--color-text-primary)',
+  outline: 'none',
+  boxSizing: 'border-box',
+  fontFamily: 'var(--font-body)',
+}
+
+export default function GateNode({ id, data }: NodeProps) {
+  const typed = data as unknown as GateNodeData
   const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState(data.label);
+  const [editValue, setEditValue] = useState(typed.label);
   const inputRef = useRef<HTMLInputElement>(null);
-  const cfg = gateConfig[data.type] || gateConfig.INPUT;
+  const cfg = gateConfig[typed.type] || gateConfig.INPUT;
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -23,15 +36,15 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
 
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditValue(data.label);
+    setEditValue(typed.label);
     setEditing(true);
   };
 
   const handleFinishEdit = () => {
     setEditing(false);
     const trimmed = editValue.trim();
-    if (trimmed && trimmed !== data.label) {
-      data.onLabelChange?.(id, trimmed);
+    if (trimmed && trimmed !== typed.label) {
+      typed.onLabelChange?.(id, trimmed);
     }
   };
 
@@ -40,89 +53,64 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
     if (e.key === 'Escape') setEditing(false);
   };
 
-  const isNot = data.type === 'NOT';
-  const isOutput = data.type === 'OUTPUT';
-  const isInput = data.type === 'INPUT';
+  const isNot = typed.type === 'NOT';
+  const isOutput = typed.type === 'OUTPUT';
+  const isInput = typed.type === 'INPUT';
 
-  const borderRadius = isInput
-    ? '8px 4px 4px 8px'
+  const br = isInput
+    ? 'rounded-tl-lg rounded-bl-lg rounded-tr-[4px] rounded-br-[4px]'
     : isOutput
-    ? '4px 8px 8px 4px'
-    : '4px';
+    ? 'rounded-tr-lg rounded-br-lg rounded-tl-[4px] rounded-bl-[4px]'
+    : 'rounded-[4px]'
 
   return (
     <div
+      className={`${br} px-[18px] py-2.5 min-w-[120px] text-center cursor-grab shadow-node font-body relative transition-all duration-150`}
       style={{
         background: `linear-gradient(145deg, ${cfg.bg}, ${cfg.bg}dd)`,
         border: `1.5px solid ${cfg.border}`,
-        borderRadius,
-        padding: '10px 18px',
-        minWidth: 120,
-        textAlign: 'center',
-        cursor: 'grab',
-        boxShadow: theme.shadow.node,
-        fontFamily: theme.font.body,
-        position: 'relative',
-        transition: 'box-shadow 0.15s ease, border-color 0.15s ease',
       }}
       onDoubleClick={handleDoubleClick}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = theme.shadow.lift;
-        e.currentTarget.style.borderColor = theme.color.primary;
+        e.currentTarget.style.boxShadow = 'var(--shadow-lift)'
+        e.currentTarget.style.borderColor = 'var(--color-primary)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = theme.shadow.node;
-        e.currentTarget.style.borderColor = cfg.border;
+        e.currentTarget.style.boxShadow = 'var(--shadow-node)'
+        e.currentTarget.style.borderColor = cfg.border
       }}
     >
       {!isInput && (
         <>
           <Handle
             type="target" position={Position.Left} id="a"
+            className="!size-2.5 !rounded-full"
             style={{
               top: isNot ? '50%' : '30%',
-              background: theme.color.textSecondary,
-              border: `2px solid ${theme.color.panel}`,
-              width: 10, height: 10, borderRadius: '50%',
+              background: 'var(--color-text-secondary)',
+              border: '2px solid var(--color-panel)',
             }}
           />
           {!isNot && (
             <Handle
               type="target" position={Position.Left} id="b"
+              className="!size-2.5 !rounded-full"
               style={{
                 top: '70%',
-                background: theme.color.textSecondary,
-                border: `2px solid ${theme.color.panel}`,
-                width: 10, height: 10, borderRadius: '50%',
+                background: 'var(--color-text-secondary)',
+                border: '2px solid var(--color-panel)',
               }}
             />
           )}
         </>
       )}
 
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-      }}>
-        <span style={{
-          fontSize: theme.size.font.badge,
-          fontWeight: 700,
-          color: theme.color.textSecondary,
-          fontFamily: theme.font.mono,
-          letterSpacing: '1px',
-          opacity: 0.7,
-        }}>
+      <div className="flex items-center justify-center gap-1.5">
+        <span className="text-badge font-bold text-text-secondary font-mono tracking-[1px] opacity-70">
           {cfg.icon}
         </span>
-        <span style={{
-          fontWeight: 700,
-          fontSize: theme.size.font.nodeType,
-          color: theme.color.textPrimary,
-          letterSpacing: '0.3px',
-        }}>
-          {data.type}
+        <span className="font-bold text-node-type text-text-primary tracking-[0.3px]">
+          {typed.type}
         </span>
       </div>
 
@@ -133,38 +121,23 @@ export default function GateNode({ id, data }: NodeProps<GateNodeData>) {
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={handleFinishEdit}
           onKeyDown={handleKeyDown}
-          style={{
-            width: '100%', marginTop: 6, padding: '3px 6px',
-            fontSize: theme.size.font.nodeLabel,
-            textAlign: 'center',
-            background: theme.color.input,
-            border: `1px solid ${theme.color.primary}`,
-            borderRadius: theme.size.radius.input,
-            color: theme.color.textPrimary,
-            outline: 'none',
-            boxSizing: 'border-box',
-            fontFamily: theme.font.body,
-          }}
+          className="text-node-label"
+          style={INPUT_STYLE}
           onClick={(e) => e.stopPropagation()}
         />
       ) : (
-        <div style={{
-          fontSize: theme.size.font.nodeLabel,
-          color: theme.color.textSecondary,
-          marginTop: 4,
-          fontWeight: 400,
-        }}>
-          {data.label}
+        <div className="text-node-label text-text-secondary mt-1 font-normal">
+          {typed.label}
         </div>
       )}
 
       {!isOutput && (
         <Handle
           type="source" position={Position.Right}
+          className="!size-2.5 !rounded-full"
           style={{
-            background: theme.color.primary,
-            border: `2px solid ${theme.color.panel}`,
-            width: 10, height: 10, borderRadius: '50%',
+            background: 'var(--color-primary)',
+            border: '2px solid var(--color-panel)',
           }}
         />
       )}

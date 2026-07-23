@@ -100,6 +100,7 @@ Global registry of named backends. Currently registered:
 - **SBOL**: SBOL XML export
 - **Simulation**: Time-series simulation
 - **DNA**: FASTA sequence export
+- **SVG**: SVG diagram export
 
 ## Data Flow
 
@@ -113,6 +114,7 @@ app.py (Flask API)
     ├── /api/simulate → CompilerPipeline → SimulationBackend → JSON
     ├── /api/optimize → CompilerPipeline → OptimizationRunner → JSON
     ├── /api/export/sbol → SBOLBackend → XML
+    ├── /api/export/svg  → SVGBackend → SVG
     ├── /api/export/dna  → DNABackend → FASTA
     ├── /api/parts   → Parts Database → JSON
     └── /api/health  → OK → JSON

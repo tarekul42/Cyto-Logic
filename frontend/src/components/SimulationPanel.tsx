@@ -3,19 +3,14 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { simulateCircuit } from '../api/compilerApi';
+import type { SimResult } from '../api/compilerApi';
+import Spinner from './Spinner';
+import SectionHeader from './SectionHeader';
+import ErrorBox from './ErrorBox';
 import { useToast } from './Toast';
-import { theme } from '../theme';
+import { ICON } from '../constants';
 
-const COLORS = ['#00d4aa', '#4a8fe7', '#f39c12', '#e74c5e', '#a78bfa', '#fb923c'];
-
-interface SimResult {
-  success?: boolean
-  error?: string
-  times?: number[]
-  trajectories?: Record<string, number[]>
-  species?: string[]
-  num_points?: number
-}
+const CHART_COLORS = ['#00d4aa', '#4a8fe7', '#f39c12', '#e74c5e', '#a78bfa', '#fb923c'];
 
 interface SimulationPanelProps {
   logic?: string
@@ -32,10 +27,28 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
 
   const handleSimulate = async () => {
     if (!logic) return;
+    const t0 = Number(tStart)
+    const t1 = Number(tEnd)
+    const dtVal = Number(dt)
+    if (isNaN(t0) || isNaN(t1) || isNaN(dtVal)) {
+      setError('Invalid simulation parameters');
+      toast('Invalid simulation parameters', 'error');
+      return
+    }
+    if (t0 >= t1) {
+      setError('tEnd must be greater than tStart');
+      toast('tEnd must be greater than tStart', 'error');
+      return
+    }
+    if (dtVal <= 0) {
+      setError('dt must be positive');
+      toast('dt must be positive', 'error');
+      return
+    }
     setIsSimulating(true);
     setError(null);
     try {
-      const result = (await simulateCircuit(logic, {}, [Number(tStart), Number(tEnd)], Number(dt))) as SimResult;
+      const result = await simulateCircuit(logic, {}, [t0, t1], dtVal);
       if (result.success === false) {
         setError(result.error || 'Simulation failed');
         toast('Simulation failed', 'error');
@@ -52,8 +65,8 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     }
   };
 
-  const chartData = simResult?.times?.map((t, i) => {
-    const point: Record<string, number> = { time: t };
+  const chartData: { time: number; [species: string]: number }[] | undefined = simResult?.times?.map((t, i) => {
+    const point: { time: number; [species: string]: number } = { time: t };
     if (simResult.trajectories) {
       Object.entries(simResult.trajectories).forEach(([sp, vals]) => {
         point[sp] = vals[i];
@@ -62,99 +75,67 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     return point;
   });
 
-  const inputStyle: Record<string, string | number> = {
-    width: 56, padding: '4px 6px', fontSize: theme.size.font.small,
-    background: theme.color.input, border: `1px solid ${theme.color.inputBorder}`,
-    borderRadius: theme.size.radius.input, color: theme.color.textPrimary,
-    textAlign: 'center', outline: 'none', fontFamily: theme.font.mono,
-  };
+  const inputFieldClass = 'text-small font-mono bg-input border border-input-border rounded-input text-text-primary text-center outline-none font-mono'
 
   return (
     <div>
       <button
         onClick={handleSimulate}
         disabled={isSimulating || !logic}
+        className="simulate-btn w-full px-2.5 py-2.5 mb-3 text-body font-semibold text-text-primary border-none rounded-button flex items-center justify-center gap-2 shadow-button"
         style={{
-          width: '100%', padding: '10px', marginBottom: 12,
-          background: isSimulating || !logic ? theme.color.surface : theme.color.primary,
-          color: theme.color.textPrimary, border: 'none',
-          borderRadius: theme.size.radius.button, fontSize: theme.size.font.body,
-          fontWeight: 600,
+          background: isSimulating || !logic ? 'var(--color-surface)' : 'var(--color-primary)',
           cursor: isSimulating || !logic ? 'not-allowed' : 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          boxShadow: theme.shadow.button,
-          transition: 'background 0.15s ease',
-        }}
-        onMouseEnter={(e) => {
-          if (!isSimulating && logic) e.currentTarget.style.background = theme.color.primaryDim;
-        }}
-        onMouseLeave={(e) => {
-          if (!isSimulating && logic) e.currentTarget.style.background = theme.color.primary;
         }}
       >
-        {isSimulating && (
-          <span style={{
-            display: 'inline-block', width: 14, height: 14,
-            border: '2px solid rgba(255,255,255,0.3)',
-            borderTopColor: theme.color.textPrimary, borderRadius: '50%',
-            animation: 'spin 0.6s linear infinite',
-          }} />
-        )}
+        {isSimulating && <Spinner />}
         {isSimulating ? 'Simulating...' : 'Run Simulation'}
       </button>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <label style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div className="flex gap-2 mb-3 items-center flex-wrap">
+        <label className="text-small text-text-secondary flex items-center gap-1">
           t:
-          <input type="number" value={tStart} onChange={(e) => setTStart(Number(e.target.value))} style={inputStyle} />
-          <span style={{ color: theme.color.textTertiary }}>&ndash;</span>
-          <input type="number" value={tEnd} onChange={(e) => setTEnd(Number(e.target.value))} style={inputStyle} />
+          <input type="number" value={tStart} onChange={(e) => setTStart(Number(e.target.value))}
+            className={`${inputFieldClass} w-14 px-1.5 py-1`} />
+          <span className="text-text-tertiary">&ndash;</span>
+          <input type="number" value={tEnd} onChange={(e) => setTEnd(Number(e.target.value))}
+            className={`${inputFieldClass} w-14 px-1.5 py-1`} />
         </label>
-        <label style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary, display: 'flex', alignItems: 'center', gap: 4 }}>
+        <label className="text-small text-text-secondary flex items-center gap-1">
           dt:
-          <input type="number" step="0.1" value={dt} onChange={(e) => setDt(Number(e.target.value))} style={{ ...inputStyle, width: 48 }} />
+          <input type="number" step="0.1" value={dt} onChange={(e) => setDt(Number(e.target.value))}
+            className={`${inputFieldClass} w-[48px] px-1.5 py-1`} />
         </label>
       </div>
 
-      {error && (
-        <div style={{
-          color: theme.color.error, fontSize: theme.size.font.small, marginBottom: 8,
-          padding: '6px 10px', background: `${theme.color.error}11`,
-          border: `1px solid ${theme.color.error}33`, borderRadius: theme.size.radius.input,
-        }}>
-          {error}
-        </div>
-      )}
+      {error && <ErrorBox>{error}</ErrorBox>}
 
       {chartData && chartData.length > 0 && (
-        <div style={{ background: theme.color.surface, borderRadius: theme.size.radius.card, padding: 10 }}>
-          <div style={{
-            fontSize: theme.size.font.section, color: theme.color.textTertiary, marginBottom: 8,
-            textTransform: 'uppercase', letterSpacing: '4px', fontWeight: 700,
-          }}>
+        <div className="bg-surface rounded-card p-2.5">
+          <SectionHeader className="!tracking-[4px]">
             Time-series ({simResult?.num_points} points)
-          </div>
+          </SectionHeader>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.color.border} />
-              <XAxis dataKey="time" stroke={theme.color.textTertiary} tick={{ fontSize: 10 }} />
-              <YAxis stroke={theme.color.textTertiary} tick={{ fontSize: 10 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="time" stroke="var(--color-text-tertiary)" tick={{ fontSize: 10 }} />
+              <YAxis stroke="var(--color-text-tertiary)" tick={{ fontSize: 10 }} />
               <Tooltip
                 contentStyle={{
-                  background: theme.color.panel,
-                  border: `1px solid ${theme.color.border}`,
-                  borderRadius: theme.size.radius.input,
-                  fontSize: theme.size.font.small,
+                  background: 'var(--color-panel)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-input)',
+                  fontSize: 11,
                 }}
-                labelStyle={{ color: theme.color.textSecondary }}
+                labelStyle={{ color: 'var(--color-text-secondary)' }}
               />
-              <Legend wrapperStyle={{ fontSize: theme.size.font.small, color: theme.color.textSecondary }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: 'var(--color-text-secondary)' }} />
               {simResult?.species?.map((sp, i) => (
                 <Line
                   key={sp}
                   type="monotone"
                   dataKey={sp}
-                  stroke={COLORS[i % COLORS.length]}
+                  stroke={CHART_COLORS[i % CHART_COLORS.length]}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -163,16 +144,13 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
             </LineChart>
           </ResponsiveContainer>
           {simResult?.species && (
-            <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+            <div className="flex gap-2.5 mt-2 flex-wrap">
               {simResult.species.map((sp, i) => (
-                <div key={sp} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: COLORS[i % COLORS.length], display: 'inline-block',
+                <div key={sp} className="flex items-center gap-1.5">
+                  <span className="size-2 rounded-full inline-block" style={{
+                    background: CHART_COLORS[i % CHART_COLORS.length],
                   }} />
-                  <span style={{ fontSize: theme.size.font.small, color: theme.color.textSecondary, fontFamily: theme.font.mono }}>
-                    {sp}
-                  </span>
+                  <span className="text-small text-text-secondary font-mono">{sp}</span>
                 </div>
               ))}
             </div>
@@ -181,21 +159,15 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
       )}
 
       {!simResult && !error && (
-        <div style={{
-          background: theme.color.surface,
-          border: `1px dashed ${theme.color.border}`,
-          borderRadius: theme.size.radius.card,
-          padding: 24,
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 28, marginBottom: 6, color: theme.color.textTertiary }}>
-            &#x223F;
-          </div>
-          <div style={{ fontSize: theme.size.font.small, color: theme.color.textTertiary }}>
-            Run a simulation to see time-series data
-          </div>
+        <div className="bg-surface border border-dashed border-border rounded-card p-6 text-center">
+          <div className="text-[28px] mb-1.5 text-text-tertiary">{ICON.SPINNER}</div>
+          <div className="text-small text-text-tertiary">Run a simulation to see time-series data</div>
         </div>
       )}
+      <style>{`
+        .simulate-btn { transition: background 0.15s ease; }
+        .simulate-btn:hover:not(:disabled) { background: var(--color-primary-dim) !important; }
+      `}</style>
     </div>
   );
 }

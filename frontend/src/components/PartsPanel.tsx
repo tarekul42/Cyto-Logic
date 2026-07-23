@@ -1,10 +1,12 @@
-import { theme, gateConfig } from '../theme';
+import { gateConfig } from '../theme';
+import SectionHeader from './SectionHeader';
 
 export default function PartsPanel() {
   const onDragStart = (event: React.DragEvent, type: string) => {
     event.dataTransfer.setData('application/reactflow', type);
     event.dataTransfer.effectAllowed = 'move';
-    const ghost = (event.target as HTMLElement).cloneNode(true) as HTMLElement;
+    const el = event.currentTarget as HTMLElement
+    const ghost = el.cloneNode(true) as HTMLElement;
     ghost.style.position = 'absolute';
     ghost.style.top = '-9999px';
     ghost.style.opacity = '0.6';
@@ -14,83 +16,42 @@ export default function PartsPanel() {
   };
 
   return (
-    <div style={{
-      padding: theme.size.space.outer,
-      background: theme.color.panel,
-      flex: 1,
-      overflowY: 'auto',
-    }}>
-      <div style={{
-        fontSize: theme.size.font.section,
-        fontWeight: 700,
-        color: theme.color.textTertiary,
-        marginBottom: theme.size.space.inner,
-        textTransform: 'uppercase',
-        letterSpacing: '6px',
-      }}>
-        Gates
-      </div>
+    <div className="p-outer bg-panel flex-1 overflow-y-auto">
+      <SectionHeader>Gates</SectionHeader>
 
       {Object.entries(gateConfig).map(([type, cfg]) => (
         <div
           key={type}
           draggable
           onDragStart={(e) => onDragStart(e, type)}
+          className="parts-gate flex items-center gap-3 select-none cursor-grab px-3.5 py-3 mb-2 rounded-card"
           style={{
-            padding: '12px 14px',
-            marginBottom: theme.size.space.tight,
-            borderRadius: theme.size.radius.card,
             background: cfg.bg,
             border: `1px solid ${cfg.border}`,
-            cursor: 'grab',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-            userSelect: 'none',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = theme.shadow.lift;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <div style={{
-            width: 14, height: 14, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', cursor: 'grab', flexShrink: 0,
-          }}>
+          <div className="size-3.5 flex items-center justify-center cursor-grab flex-shrink-0">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="4" cy="3" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
-              <circle cx="10" cy="3" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
-              <circle cx="4" cy="7" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
-              <circle cx="10" cy="7" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
-              <circle cx="4" cy="11" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
-              <circle cx="10" cy="11" r="1.5" fill={theme.color.textTertiary} opacity="0.6"/>
+              <circle cx="4" cy="3" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
+              <circle cx="10" cy="3" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
+              <circle cx="4" cy="7" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
+              <circle cx="10" cy="7" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
+              <circle cx="4" cy="11" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
+              <circle cx="10" cy="11" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
             </svg>
           </div>
-          <span style={{
-            fontSize: theme.size.font.badge,
-            fontWeight: 700,
-            color: theme.color.textSecondary,
-            fontFamily: theme.font.mono,
-            textTransform: 'uppercase',
-            letterSpacing: '1px',
-            width: 36,
-          }}>
+          <span className="text-badge font-bold text-text-secondary font-mono uppercase tracking-[1px] w-9">
             {cfg.icon}
           </span>
-          <span style={{
-            fontSize: theme.size.font.body,
-            fontWeight: 600,
-            color: theme.color.textPrimary,
-          }}>
+          <span className="text-body font-semibold text-text-primary">
             {cfg.label}
           </span>
         </div>
       ))}
+      <style>{`
+        .parts-gate { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .parts-gate:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+      `}</style>
     </div>
   );
 }

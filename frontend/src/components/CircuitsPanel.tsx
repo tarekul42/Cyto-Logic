@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useToast } from './Toast'
-import { theme } from '../theme'
 import type { Node, Edge } from '@xyflow/react'
+import { ICON } from '../constants'
+import { StorageError } from '../errors'
 
 const STORAGE_KEY = 'cyto-logic-circuits'
 
@@ -66,7 +67,13 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
   })
 
   const persistSaved = (list: SavedCircuit[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+    } catch (e) {
+      const err = e instanceof StorageError ? e : new StorageError('Could not save circuit (storage may be full)')
+      toast(err.message, 'error')
+      return
+    }
     setSavedCircuits(list)
   }
 
@@ -102,86 +109,63 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
     toast(`Loaded "${t.name}" template`, 'info')
   }
 
-  const toggle = (): Record<string, string | number> => ({
-    fontSize: theme.size.font.section, fontWeight: 700, color: theme.color.textTertiary,
-    textTransform: 'uppercase', letterSpacing: '5px', cursor: 'pointer', userSelect: 'none',
-    padding: `8px ${theme.size.space.outer}px`, borderBottom: `1px solid ${theme.color.border}`,
-    transition: 'color 0.15s',
-  })
-
-  const btn: Record<string, string | number> = {
-    padding: '6px 10px', marginBottom: 4, background: theme.color.surface,
-    border: `1px solid ${theme.color.border}`, borderRadius: theme.size.radius.input,
-    cursor: 'pointer', fontSize: theme.size.font.small, color: theme.color.textSecondary,
-    textAlign: 'left', transition: 'background 0.15s',
-  }
+  const sectionHeaderClass = 'text-section font-bold text-text-tertiary uppercase cursor-pointer select-none px-outer py-2 border-b border-border transition-[color] duration-150 hover:text-text-secondary tracking-[5px]'
 
   return (
-    <div style={{ borderTop: `1px solid ${theme.color.border}`, marginTop: 'auto' }}>
-      <div style={toggle(showTemplates)} onClick={() => setShowTemplates(!showTemplates)}>
-        {showTemplates ? '\u25BE' : '\u25B8'} Templates
+    <div className="border-t border-border mt-auto">
+      <div className={sectionHeaderClass} onClick={() => setShowTemplates(!showTemplates)}>
+        {showTemplates ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Templates
       </div>
       {showTemplates && (
-        <div style={{ padding: `8px ${theme.size.space.outer}px` }}>
+        <div className="px-outer py-2">
           {TEMPLATES.map((t) => (
-            <button key={t.name} onClick={() => handleTemplate(t)} style={btn}
-              onMouseEnter={(e) => e.currentTarget.style.background = theme.color.surfaceAlt}
-              onMouseLeave={(e) => e.currentTarget.style.background = theme.color.surface}>
+            <button key={t.name} onClick={() => handleTemplate(t)}
+              className="circuit-btn w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer transition-[background] duration-150">
               {t.name}
             </button>
           ))}
         </div>
       )}
 
-      <div style={toggle(showSaved)} onClick={() => setShowSaved(!showSaved)}>
-        {showSaved ? '\u25BE' : '\u25B8'} Saved
+      <div className={sectionHeaderClass} onClick={() => setShowSaved(!showSaved)}>
+        {showSaved ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Saved
       </div>
       {showSaved && (
-        <div style={{ padding: `8px ${theme.size.space.outer}px`, maxHeight: 200, overflowY: 'auto' }}>
-          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        <div className="px-outer py-2 max-h-[200px] overflow-y-auto">
+          <div className="flex gap-1 mb-2">
             <input value={saveName} onChange={(e) => setSaveName(e.target.value)}
               placeholder="Circuit name"
-              style={{
-                flex: 1, padding: '5px 8px', fontSize: theme.size.font.small,
-                background: theme.color.input, border: `1px solid ${theme.color.inputBorder}`,
-                borderRadius: theme.size.radius.input, color: theme.color.textPrimary,
-                outline: 'none', fontFamily: theme.font.body,
-              }}
+              className="flex-1 px-2 py-1.5 text-small bg-input border border-input-border rounded-input text-text-primary outline-none font-body"
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             />
-            <button onClick={handleSave} style={{
-              padding: '5px 10px', background: theme.color.primary, color: theme.color.textPrimary,
-              border: 'none', borderRadius: theme.size.radius.input, cursor: 'pointer',
-              fontSize: theme.size.font.small, fontWeight: 600, whiteSpace: 'nowrap',
-            }}>
+            <button onClick={handleSave}
+              className="px-2.5 py-1.5 bg-primary text-text-primary border-none rounded-input cursor-pointer text-small font-semibold whitespace-nowrap">
               Save
             </button>
           </div>
           {savedCircuits.length === 0 && (
-            <div style={{ fontSize: theme.size.font.section, color: theme.color.textTertiary, textAlign: 'center', padding: 8 }}>
+            <div className="text-section text-text-tertiary text-center py-2">
               No saved circuits
             </div>
           )}
           {savedCircuits.map((c) => (
-            <div key={c.name} style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-              <button onClick={() => handleLoad(c)} style={{ ...btn, flex: 1, marginBottom: 0 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = theme.color.surfaceAlt}
-                onMouseLeave={(e) => e.currentTarget.style.background = theme.color.surface}>
+            <div key={c.name} className="flex gap-1 mb-1">
+              <button onClick={() => handleLoad(c)}
+                className="circuit-btn flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded-input text-small text-text-secondary cursor-pointer transition-[background] duration-150">
                 {c.name}
               </button>
-              <button onClick={() => handleDelete(c.name)} style={{
-                padding: '6px 8px', background: 'transparent',
-                border: `1px solid ${theme.color.border}`, borderRadius: theme.size.radius.input,
-                cursor: 'pointer', fontSize: theme.size.font.section, color: theme.color.textTertiary,
-              }}
-                onMouseEnter={(e) => e.currentTarget.style.color = theme.color.danger}
-                onMouseLeave={(e) => e.currentTarget.style.color = theme.color.textTertiary}>
-                &#x2715;
+              <button onClick={() => handleDelete(c.name)}
+                className="delete-btn px-2 py-1.5 bg-transparent border border-border rounded-input cursor-pointer text-section text-text-tertiary">
+                {ICON.DELETE}
               </button>
             </div>
           ))}
         </div>
       )}
+      <style>{`
+        .circuit-btn:hover { background: var(--color-surface-alt) !important; }
+        .delete-btn:hover { color: var(--color-danger) !important; }
+      `}</style>
     </div>
   )
 }
