@@ -6,7 +6,8 @@ import CircuitsPanel from './components/CircuitsPanel';
 import OutputPanel from './components/OutputPanel';
 import SectionHeader from './components/SectionHeader';
 import { ToastProvider } from './components/Toast';
-import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { useTheme } from './context/useTheme';
 import type { Node, Edge } from '@xyflow/react';
 import type { CompileResult } from './api/compilerApi';
 

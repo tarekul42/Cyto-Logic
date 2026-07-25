@@ -28,7 +28,7 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
   const [vmax, setVmax] = useState(10.0);
   const [delta, setDelta] = useState(0.5);
   const toast = useToast();
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const isFirstRender = useRef(true);
 
   const runSimulation = useCallback(async (params?: Record<string, number>) => {
     if (!logic) return;
@@ -77,38 +77,31 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     }
   }, [logic, tStart, tEnd, dt, hillN, kd, vmax, delta, toast]);
 
-  const debouncedRun = useCallback(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      const params = { hill_n: hillN, kd, vmax, delta };
-      runSimulation(params);
-    }, 300);
-  }, [hillN, kd, vmax, delta, runSimulation]);
-
   useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      runSimulation({ hill_n: hillN, kd, vmax, delta });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [hillN, kd, vmax, delta, runSimulation]);
 
   const handleHillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHillN(Number(e.target.value));
-    debouncedRun();
   };
 
   const handleKdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setKd(Number(e.target.value));
-    debouncedRun();
   };
 
   const handleVmaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setVmax(Number(e.target.value));
-    debouncedRun();
   };
 
   const handleDeltaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDelta(Number(e.target.value));
-    debouncedRun();
   };
 
   const chartData = simResult?.times?.map((t, i) => {
@@ -151,7 +144,6 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
             else if (label === 'Kd') setKd(v);
             else if (label === 'α') setVmax(v);
             else if (label === 'γ') setDelta(v);
-            debouncedRun();
           }
         }}
         className="text-[11px] font-mono bg-input border border-input-border rounded text-text-primary text-center outline-none w-14 px-1 py-0.5"
