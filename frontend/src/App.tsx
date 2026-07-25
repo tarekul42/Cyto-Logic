@@ -1,122 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useCallback } from 'react';
+import { ReactFlowProvider } from '@xyflow/react';
+import CircuitCanvas from './components/CircuitCanvas';
+import PartsPanel from './components/PartsPanel';
+import CircuitsPanel from './components/CircuitsPanel';
+import OutputPanel from './components/OutputPanel';
+import SectionHeader from './components/SectionHeader';
+import { ToastProvider } from './components/Toast';
+import type { Node, Edge } from '@xyflow/react';
+import type { CompileResult } from './api/compilerApi';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [result, setResult] = useState<CompileResult | null>(null);
+  const [circuitKey, setCircuitKey] = useState(0);
+  const [loadedCircuit, setLoadedCircuit] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
+  const [currentCircuit, setCurrentCircuit] = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] });
+
+  const handleCircuitChange = useCallback((nodes: Node[], edges: Edge[]) => {
+    setCurrentCircuit({ nodes, edges })
+  }, []);
+
+  const handleLoadCircuit = useCallback((nodes: Node[], edges: Edge[]) => {
+    setLoadedCircuit({ nodes, edges })
+    setCurrentCircuit({ nodes, edges })
+    setCircuitKey((k) => k + 1)
+  }, []);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <ToastProvider>
+    <div className="h-screen flex font-body bg-canvas text-text-primary">
+      <div className="w-55 shrink-0 border-r border-border bg-panel flex flex-col">
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border"
+          style={{ background: 'linear-gradient(135deg, var(--color-panel) 0%, #0d1a2a 100%)' }}>
+          <img src="/cyto_logic.png" alt="Cyto Logic" className="size-logo" />
+          <span className="text-xl font-semibold text-text-primary font-brand tracking-wide">
+            cyto logic
+          </span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        <PartsPanel />
+        <CircuitsPanel
+          nodes={currentCircuit.nodes}
+          edges={currentCircuit.edges}
+          onLoad={handleLoadCircuit}
+        />
+      </div>
 
-      <div className="ticks"></div>
+      <div className="flex-1 relative bg-canvas">
+        <ReactFlowProvider>
+          <CircuitCanvas
+            key={circuitKey}
+            loadedCircuit={loadedCircuit}
+            onCircuitChange={handleCircuitChange}
+            onResult={setResult}
+          />
+        </ReactFlowProvider>
+      </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="w-[320px] shrink-0 border-l border-border bg-panel flex flex-col">
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
+          <SectionHeader className="mb-0">Results</SectionHeader>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <OutputPanel result={result} />
+      </div>
+    </div>
+    </ToastProvider>
+  );
 }
-
-export default App

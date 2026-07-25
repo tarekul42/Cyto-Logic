@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #0b1926;
+  --color-panel: #112233;
+  --color-surface: #1a2d3d;
+  --color-surface-alt: #1f3347;
+  --color-border: #1e3a4f;
+  --color-border-light: #2a4a63;
+  --color-primary: #00d4aa;
+  --color-primary-dim: #00a888;
+  --color-secondary: #4a8fe7;
+  --color-danger: #e74c5e;
+  --color-danger-dim: #c0392b;
+  --color-warning: #f39c12;
+  --color-text-primary: #f0f4f8;
+  --color-text-secondary: #8ba3b8;
+  --color-text-tertiary: #5a7388;
+  --color-input: #0a1628;
+  --color-input-border: #2a4a63;
+  --color-node-input: #1a4a6e;
+  --color-node-input-border: #2a7ab5;
+  --color-node-gate: #4a2a5a;
+  --color-node-gate-border: #7a4a8a;
+  --color-node-output: #6e2a3a;
+  --color-node-output-border: #aa3a5a;
+  --color-success: #00d4aa;
+  --color-error: #e74c5e;
+
+  --font-brand: "Audiowide", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+
+  --shadow-glow: 0 0 20px rgba(0, 212, 170, 0.3);
+  --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

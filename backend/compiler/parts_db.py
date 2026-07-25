@@ -1,24 +1,4 @@
-"""
-Core responsibility
------------------------------------------------
-Store the biological parts used by the compiler.
-The mapper looks up this file whenever it needs
-to translate a logic gate into real genetic parts.
-For now I only included a small collection of
-commonly used BioBrick components. More parts
-can be added without changing the compiler itself.
-
-Design note
-----------------------------------------------------
-I wanted all biological data in one place instead
-of mixing it with compiler code.
-This file is only a reference database.
-It does not contain any compilation logic.
-Keeping the data separate made it easier to update
-part information without touching the mapper.
-"""
-
-# Input molecules and regulatory proteins that can appear inside a logic program.
+# Input molecules and regulatory proteins
 BIOMOLECULES = {
     "aTc": {
         "id": "BBa_K145001", 
@@ -29,6 +9,16 @@ BIOMOLECULES = {
         "id": "BBa_I13458", 
         "role": "regulatory_protein", 
         "info": "Arabinose regulatory protein"
+    },
+    "IPTG": {
+        "id": "BBa_K145000",
+        "role": "inducer",
+        "info": "IPTG - induces LacI promoter"
+    },
+    "HSL": {
+        "id": "BBa_C0061",
+        "role": "inducer",
+        "info": "AHL quorum sensing signal (3OC6HSL)"
     },
     
     "TetR": {
@@ -45,6 +35,16 @@ BIOMOLECULES = {
         "id": "BBa_C0051", 
         "role": "CDS", 
         "info": "Lambda cI repressor protein coding sequence"
+    },
+    "AraC_activator": {
+        "id": "BBa_C0080",
+        "role": "CDS",
+        "info": "AraC activator protein (full-length)"
+    },
+    "LuxR": {
+        "id": "BBa_C0062",
+        "role": "CDS",
+        "info": "LuxR quorum sensing regulator"
     }
 }
 
@@ -55,17 +55,22 @@ GATES_DB = {
     "NOT": [
         {"id": "BBa_R0040", "role": "promoter", "info": "TetR repressible promoter (pTet)"},
         {"id": "BBa_B0034", "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015", "role": "terminator", "info": "Double terminator"}
     ],
     "AND": [
         {"id": "BBa_K1847000", "role": "promoter", "info": "AND gate promoter (Split-activator responsive)"},
         {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015",    "role": "terminator", "info": "Double terminator"}
     ],
     "OR": [
         {"id": "BBa_K1847001", "role": "promoter", "info": "OR gate dual promoter"},
         {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
-        {"id": "BBa_B0015",    "role": "terminator", "info": "Double terminator"}
+    ],
+    "NAND": [
+        {"id": "BBa_K1847002", "role": "promoter", "info": "NAND gate promoter (repressor cascade)"},
+        {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
+    ],
+    "NOR": [
+        {"id": "BBa_K1847003", "role": "promoter", "info": "NOR gate dual repressor promoter"},
+        {"id": "BBa_B0034",    "role": "RBS",      "info": "Strong RBS"},
     ]
 }
 # Reporter proteins are treated separately because they represent the final observable output.
@@ -79,19 +84,47 @@ REPORTERS = {
         "id": "BBa_E0010", 
         "role": "CDS", 
         "info": "Red Fluorescent Protein reporter"
+    },
+    "BFP": {
+        "id": "BBa_E0020",
+        "role": "CDS",
+        "info": "Blue Fluorescent Protein reporter"
+    },
+    "YFP": {
+        "id": "BBa_E0030",
+        "role": "CDS",
+        "info": "Yellow Fluorescent Protein reporter"
+    },
+    "mCherry": {
+        "id": "BBa_J06504",
+        "role": "CDS",
+        "info": "mCherry red fluorescent reporter"
+    },
+    "LacZ": {
+        "id": "BBa_I732005",
+        "role": "CDS",
+        "info": "Beta-galactosidase reporter"
     }
 }
 
-"""
-Small lookup table describing a few known
-regulatory relationships. It is not used by
-the parser and is only biological knowledge.
-"""
+ADDITIONAL_PARTS = {
+    "BBa_B0032": {"role": "RBS",      "info": "Medium strength RBS"},
+    "BBa_R0010": {"role": "promoter", "info": "LacI repressible promoter (pLac)"},
+    "BBa_R0051": {"role": "promoter", "info": "cI repressible promoter (pR)"},
+    "BBa_I0500": {"role": "promoter", "info": "AraC inducible promoter (pBad)"},
+    "BBa_R0062": {"role": "promoter", "info": "LuxR inducible promoter (plux)"},
+    "BBa_B0010": {"role": "terminator", "info": "T7 terminator"},
+    "BBa_B0012": {"role": "terminator", "info": "Double terminator (reverse)"},
+}
 
 REGULATORY_MAP = {
     "TetR_protein": {"target_promoter": "BBa_R0040", "action": "repress"},
     "aTc_inducer": {"target_protein": "TetR", "action": "inhibit_repressor"},
-    "LacI_protein": {"target_promoter": "BBa_R0010", "action": "repress"}
+    "LacI_protein": {"target_promoter": "BBa_R0010", "action": "repress"},
+    "IPTG_inducer": {"target_protein": "LacI", "action": "inhibit_repressor"},
+    "AraC_protein": {"target_promoter": "BBa_I0500", "action": "activate"},
+    "LuxR_protein": {"target_promoter": "BBa_R0062", "action": "activate"},
+    "cI_protein": {"target_promoter": "BBa_R0051", "action": "repress"},
 }
 
 if __name__ == "__main__":

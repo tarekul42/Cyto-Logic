@@ -1,0 +1,191 @@
+import { useState } from 'react';
+import { exportSBOL, exportDNA, exportSVG } from '../api/compilerApi';
+import type { CompileResult } from '../api/compilerApi';
+import { getRoleColor } from '../lib/sbolUtils';
+import SectionHeader from './SectionHeader';
+import ErrorBox from './ErrorBox';
+import SimulationPanel from './SimulationPanel';
+import { useToast } from './Toast';
+import { ICON, PLURAL } from '../constants';
+
+interface OutputPanelProps {
+  result: CompileResult | null
+}
+
+export default function OutputPanel({ result }: OutputPanelProps) {
+  const [isExporting, setIsExporting] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'parts' | 'simulation'>('parts');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const toast = useToast();
+
+  if (result === null) {
+    return (
+      <div className="p-4 text-text-tertiary text-[11px] text-center flex-1 flex items-center justify-center">
+        <div>
+          <div className="text-[32px] mb-2 text-border-light">{ICON.EMPTY_BOX}</div>
+          <div>Compile a circuit to see results</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!result.success) {
+    return (
+      <div className="p-4 text-[11px] flex-1">
+        <div
+          className="rounded-lg px-3.5 py-2.5 font-bold"
+          style={{
+            color: 'var(--color-error)',
+            background: 'color-mix(in srgb, var(--color-error) 7%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--color-error) 20%, transparent)',
+          }}
+        >
+          Compilation Error
+          <div className="mt-1 font-normal text-text-secondary">{result.error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const handleExport = async (exportFn: () => Promise<void>, label: string) => {
+    setIsExporting(label);
+    setExportError(null);
+    setShowExportMenu(false);
+    try {
+      await exportFn();
+      toast(`${label} exported`, 'success');
+    } catch (error) {
+      console.error(`${label} export failed:`, error);
+      setExportError(`${label} export failed. Check if backend is running.`);
+      toast(`${label} export failed`, 'error');
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const exportOptions = [
+    { label: 'SBOL', fn: () => exportSBOL(result.parts || [], result.logic || 'circuit'), icon: ICON.SBOL },
+    { label: 'DNA',  fn: () => exportDNA(result.logic || '', result.logic || 'circuit'),  icon: ICON.DNA },
+    { label: 'SVG',  fn: () => exportSVG(result.logic || '', result.logic || 'circuit'),  icon: ICON.SVG },
+  ];
+
+  const nodeCount = result.nodes?.length || 0;
+  const edgeCount = result.edges?.length || 0;
+  const inputCount = result.nodes?.filter((n) => n.type === 'INPUT').length;
+  const outputCount = result.nodes?.filter((n) => n.type === 'OUTPUT').length;
+
+  return (
+    <div className="p-3 text-text-primary flex flex-col flex-1 overflow-hidden">
+      <div className="flex gap-2 mb-3">
+        <div className="flex-1 bg-surface rounded-lg px-2.5 py-2">
+          <SectionHeader className="tracking-[3px]! mb-0.5!">Output</SectionHeader>
+          <div className="text-[15px] font-semibold mt-0.5 text-primary font-mono">
+            {result.output_protein || 'N/A'}
+          </div>
+        </div>
+        <div className="flex-1 bg-surface rounded-lg px-2.5 py-2">
+          <SectionHeader className="tracking-[3px]! mb-0.5!">Parts</SectionHeader>
+          <div className="text-[15px] font-semibold mt-0.5 text-text-primary">
+            {result.parts?.length || 0}
+          </div>
+        </div>
+      </div>
+
+      {(nodeCount > 0 || edgeCount > 0) && (
+        <div className="text-[11px] text-text-tertiary mb-3 px-2.5 py-1.5 bg-surface rounded flex gap-3">
+          <span>{PLURAL(nodeCount, 'node')}</span>
+          <span>{PLURAL(edgeCount, 'edge')}</span>
+          {inputCount != null && <span>{PLURAL(inputCount, 'input')}</span>}
+          {outputCount != null && <span>{ICON.ARROW_RIGHT} {PLURAL(outputCount, 'output')}</span>}
+        </div>
+      )}
+
+      <div className="flex mb-3">
+        <button
+          onClick={() => setActiveTab('parts')}
+          className="flex-1 py-2.5 text-center text-[11px] font-bold uppercase tracking-[3px] cursor-pointer"
+          style={{
+            color: activeTab === 'parts' ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+            borderBottom: activeTab === 'parts' ? '2px solid var(--color-primary)' : '2px solid transparent',
+          }}
+        >
+          Parts
+        </button>
+        <button
+          onClick={() => setActiveTab('simulation')}
+          className="flex-1 py-2.5 text-center text-[11px] font-bold uppercase tracking-[3px] cursor-pointer"
+          style={{
+            color: activeTab === 'simulation' ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+            borderBottom: activeTab === 'simulation' ? '2px solid var(--color-primary)' : '2px solid transparent',
+          }}
+        >
+          Simulation
+        </button>
+      </div>
+
+      {activeTab === 'parts' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto pr-1">
+            {result.parts?.map((part, index) => (
+              <div key={index}
+                className="flex justify-between items-center bg-surface-alt border border-border rounded px-2.5 py-1.5 mb-1 text-[11px]">
+                <span className="font-mono text-primary text-[11px]">{part.id}</span>
+                {part.role && (
+                  <span className="text-[9px] font-bold uppercase tracking-[1px] rounded-sm px-1.5 py-0.5"
+                    style={{
+                      color: getRoleColor(part.role),
+                      background: `${getRoleColor(part.role)}15`,
+                      border: `1px solid ${getRoleColor(part.role)}30`,
+                    }}>
+                    {part.role}
+                  </span>
+                )}
+              </div>
+            ))}
+            {(!result.parts || result.parts.length === 0) && (
+              <div className="text-[11px] text-text-tertiary text-center mt-2.5">
+                No parts found in this circuit.
+              </div>
+            )}
+          </div>
+
+          {exportError && <ErrorBox>{exportError}</ErrorBox>}
+
+          <div className="relative mt-2">
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={isExporting !== null}
+              className="w-full px-2.5 py-2.5 rounded-md text-[11px] font-bold bg-primary text-text-primary border-none flex items-center justify-center gap-1.5 uppercase tracking-[3px] shadow-lg"
+              style={{ cursor: isExporting !== null ? 'not-allowed' : 'pointer' }}
+            >
+              {isExporting !== null ? `Exporting ${isExporting}...` : `Export ${ICON.EXPAND_DOWN}`}
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute bottom-full left-0 right-0 mb-1 bg-panel border border-border rounded-lg shadow-lift overflow-hidden z-20">
+                {exportOptions.map(({ label, fn, icon }) => (
+                  <button
+                    key={label}
+                    onClick={() => handleExport(fn, label)}
+                    className="w-full px-3.5 py-2 text-[11px] font-semibold bg-transparent text-text-secondary flex items-center gap-1.5"
+                    style={{ cursor: isExporting !== null ? 'not-allowed' : 'pointer' }}
+                  >
+                    <span className="font-mono text-text-tertiary">{icon}</span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'simulation' && (
+        <div className="flex-1 overflow-y-auto">
+          <SimulationPanel logic={result.logic || undefined} />
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,349 +1,143 @@
 # Cyto Logic
 
-A compiler framework for synthetic biology that transforms high-level biological logic into genetic circuit representations.
+A compiler that turns boolean logic expressions into genetic circuit designs. Write `IF (aTc AND NOT AraC) -> GFP`, get back a list of BioBrick parts, SBOL XML, or a FASTA sequence.
 
-> **Current Status:** Phase 1 and Phase 2 completed. Simulation Engine is under active development.
-
----
-
-## Overview
-
-Cyto Logic is an experimental compiler infrastructure designed for synthetic biology. The project explores a compiler-oriented approach to genetic circuit engineering, where biological logic is treated similarly to source code in a traditional programming language.
-
-Instead of directly generating DNA sequences from user input, Cyto Logic separates the compilation process into independent stages. A logic expression is parsed into an Abstract Syntax Tree (AST), transformed into a Circuit Intermediate Representation (CIR), and later consumed by different backend systems such as simulation, optimization, and biological exporters.
-
-The long-term goal is to build a reusable compiler platform that can support multiple biological programming languages and multiple output targets without redesigning the entire system.
+Built as a senior capstone / research project exploring how compiler design patterns (lexer → parser → IR → codegen) map onto synthetic biology workflows.
 
 ---
 
-## Motivation
+## Quick Start
 
-Most synthetic biology software combines circuit design, simulation, and exporting into tightly coupled workflows. While this approach works for specific applications, it becomes difficult to extend as projects grow.
+```bash
+# Backend
+cd backend
+pip install -r requirements.txt
+python app.py              # starts Flask on :5000
 
-Cyto Logic follows a different philosophy.
-
-The compiler frontend is responsible only for understanding biological logic. Every later stage works on a common intermediate representation rather than the original source code. This separation allows simulation, optimization, validation, and export systems to evolve independently.
-
-The architecture is inspired by modern compiler infrastructures such as LLVM, adapted for synthetic biology.
-
----
-
-## Current Development Status
-
-| Phase | Status |
-|--------|--------|
-| Phase 1 • Compiler Frontend | Completed |
-| Phase 2 • Circuit Intermediate Representation (CIR) | Completed |
-| Phase 3 • Simulation Engine | Planned |
-| Phase 4 • Optimization Engine | Planned |
-| Phase 5 • Validation & Publication | Planned |
-
----
-
-# Completed Features
-
-## Phase 1 ✅
-
-Compiler Frontend
-
-- Lexer
-- Token generation
-- Token position tracking
-- AST node definitions
-- Parser framework
-- Compiler architecture
-- Error reporting foundation
-
-## Phase 2 ✅
-
-Intermediate Representation
-
-- Circuit IR design
-- IR Builder architecture
-- Graph-based circuit representation
-- Backend abstraction
-- Compiler pipeline integration
-- Modular system architecture
-
----
-
-# How Cyto Logic Works
-
-```
-User
- │
- ▼
-Logic Expression
- │
- ▼
-Client Layer
- │
- ▼
-API Gateway
- │
- ▼
-Lexer
- │
- ▼
-Parser
- │
- ▼
-Semantic Analyzer
- │
- ▼
-Circuit Intermediate Representation (Graph)
- │
- ├──────────────┐
- ▼              │
-Simulation      │
- │              │
- ▼              │
-Time-Series     │
-                ▼
-        Optimization
-                │
-                ▼
-      Optimized Circuit
-                │
-                ▼
-        Code Generators
-                │
-                ▼
- SBOL / FASTA / JSON / Graph
-                │
-                ▼
-          Persistence
+# Frontend (separate terminal)
+cd frontend
+npm install
+npm run dev                # Vite on :5173
 ```
 
+Open `http://localhost:5173`, drag some gates onto the canvas, hit Compile.
 
----
-
-# Architecture
-
-Cyto Logic follows a layered compiler architecture.
-
-```
-                    Client Layer
-                         │
-                         ▼
-                    API Gateway
-                         │
-                         ▼
-                 Compiler Frontend
-                         │
-                         ▼
-        Circuit Intermediate Representation (CIR)
-              ┌──────────┼──────────┐
-              │          │          │
-              ▼          ▼          ▼
-      Simulation   Optimization   Code Generators
-              │          │          │
-              └──────────┼──────────┘
-                         │
-                         ▼
-                    Persistence
+Or from Python directly:
+```python
+from compiler.pipeline import CompilerPipeline
+pipeline = CompilerPipeline()
+cir, messages = pipeline.run("IF (aTc AND AraC) -> GFP")
+print(cir.all_parts)  # [promoter, RBS, GFP, terminator]
 ```
 
-Every major subsystem has a single responsibility.
+---
 
-The frontend never communicates directly with simulation or exporters.
+## How It Works
 
-All downstream systems consume the Circuit Intermediate Representation.
+```
+"IF (NOT aTc) -> GFP"
+        │
+    ┌───┴───┐
+    Lexer   (character scan → tokens)
+    Parser  (recursive descent → AST)
+    Semantic (check proteins exist in DB)
+    IR Builder (AST → graph of parts)
+    ────
+    Backends:
+    SBOL  →  .xml (SBOL2 compliant)
+    DNA   →  .fa  (FASTA with sequences)
+    SVG   →  .svg (topology diagram)
+    Sim   →  time-series plots
+```
+
+Each backend gets the same intermediate representation (CIR) — a list of parts in 5'→3' order. No backend-specific logic in the compiler core.
 
 ---
 
-# Compiler Frontend
+## What I Built
 
-The frontend consists of three sequential stages.
+**Compiler core** (`backend/compiler/`):
+- `lexer.py` / `parser.py` — simple recursive-descent, supports `IF`, `AND`, `OR`, `NOT`, parens
+- `semantic.py` — checks that input molecules and reporters are defined in the parts DB, warns about unknowns
+- `ir_builder.py` — walks the AST, selects BioBrick parts per gate type from `parts_db.py`
+- `cir.py` — graph-based intermediate representation (nodes = gates/inputs, edges = signal flow, parts = DNA assembly list)
+- `pipeline.py` — orchestrates the full compile chain
 
-## Lexer
+**Parts database** (`parts_db.py`):
+- ~30 iGEM BioBrick parts mapped to roles: promoters (pTet, pLac, pBad, etc.), RBS (strong/medium), CDS (TetR, LacI, cI, LuxR, GFP, RFP, BFP, YFP, mCherry), terminators
+- Regulatory map for repression/induction relationships
 
-The lexer converts raw source text into a sequence of tokens.
+**Backends**:
+- `dna_backend.py` — FASTA output, concatenates sequences in order
+- `sbol_backend.py` — SBOL2 XML with unique component IDs per part instance
+- `svg_backend.py` — circuit topology diagram with auto-layout
+- `simulation_stub.py` — Hill kinetics ODE solver (RK4)
+- `optimization/` — GA + NSGA-II for tuning RBS strengths
 
-Each token stores
+**Frontend** (`frontend/`):
+- React 19 + @xyflow/react circuit editor
+- Drag-and-drop from parts palette
+- Undo/redo, keyboard shortcuts
+- Simulation panel with Recharts
+- Export to SBOL / DNA / SVG
 
-- Type
-- Value
-- Source position
-
----
-
-## Parser
-
-The parser consumes the token stream and constructs an Abstract Syntax Tree (AST).
-
-The AST represents the logical structure of a biological circuit without including implementation-specific information.
-
----
-
-## Semantic Analysis
-
-The semantic analysis stage validates biologically meaningful rules.
-
-Examples include
-
-- Undefined proteins
-- Invalid gate arity
-- Incorrect circuit structure
+**Tests**: 245 backend (pytest) + 71 frontend (Vitest).
 
 ---
 
-# Circuit Intermediate Representation (CIR)
+## Tricky Parts / Notes
 
-The Circuit IR is the core abstraction inside Cyto Logic.
-
-Instead of allowing every backend to consume the AST directly, all compiler outputs are transformed into a graph-based intermediate representation.
-
-Each CIR node stores
-
-- Unique identifier
-- Gate type
-- Parent and child relationships
-- Metadata
-- Biological parameters (future)
-
-The CIR acts as the single source of truth throughout the compiler.
+- **Part order in XML was breaking early on.** The `parts_deduplicated()` method collapsed duplicate BioBricks (e.g., same RBS used in two places) into one entry, which meant the SBOL output had missing components and wrong sequence ordering. Fixed by keeping a separate `all_parts` list that preserves every instance — dedup only for complexity scoring.
+- **VisBOL parsing assumes strict 5'→3'.**
+  If the CDS index shifts during traversal the whole annotation is off. Made sure IR builder appends parts in traversal order and backends never re-sort.
+- **Hill function parameters are approximated** from literature — not tuned for any specific chassis. The simulation is qualitative, not quantitative.
+- **Gate definitions only have promoter + RBS**, the CDS is selected dynamically based on the input molecule (e.g., aTc → TetR, AraC → LacI). This keeps the gate DB small but means AND/OR gates don't have repressor CDS yet — they just have the hybrid promoter.
+- **Frontend graph → logic conversion** uses topological backtracking from output node. Cycle detection prevents infinite loops but complex nested circuits get verbose string output.
 
 ---
 
-# Project Philosophy
+## Project Layout
 
-Cyto Logic is designed as reusable compiler infrastructure rather than a single-purpose application.
-
-The architecture follows several principles.
-
-- Stateless compiler stages
-- Modular components
-- Layer separation
-- Replaceable backends
-- Shared intermediate representation
-- Independent simulation
-- Independent optimization
-- Extensible export system
-
----
-
-# Planned Features
-
-The following systems are part of the roadmap.
-
-## Phase 3
-
-Simulation Engine
-
-- Hill kinetics
-- ODE solver
-- Time-series simulation
-- Circuit visualization
+```
+backend/
+  app.py                   # Flask API routes
+  compiler/
+    lexer.py, parser.py    # frontend stages
+    semantic.py            # protein validation
+    ir_builder.py          # AST → CIR
+    cir.py                 # intermediate representation
+    parts_db.py            # BioBrick reference data
+    pipeline.py            # compile orchestrator
+    gate_mapper.py         # thin wrapper around IR builder
+    backends/              # sbol, dna, svg, simulation
+    optimization/          # GA, NSGA-II
+    plugin/                # hook system
+  tests/                   # pytest suite
+frontend/
+  src/
+    components/            # ReactFlow canvas, panels
+    api/                   # REST client
+    hooks/                 # undo/redo history
+    test/                  # Vitest suite
+docs/
+  api.md, architecture.md, development.md
+```
 
 ---
 
-## Phase 4
+## Things I'd Do Differently
 
-Optimization Engine
-
-- Genetic Algorithm
-- NSGA-II
-- Multi-objective optimization
-- Automatic parameter tuning
-
-Objectives include
-
-- Expression accuracy
-- Metabolic burden
-- Noise robustness
+- The parts database should come from an external file (CSV/JSON) instead of being hardcoded in Python. Loading from iGEM's API would be better long-term.
+- AND/OR gate parts are placeholder hybrid promoters — real combinatorial logic needs layered repressor cascades or split-T7 systems.
+- The SBOL exporter doesn't set sequence constraints on component definitions. Not strictly required for SBOL2 but tools like Cello expect them.
+- Frontend could use Zustand or Jotai instead of prop-drilling through ReactFlow callbacks.
+- Simulation parameters should be discoverable from the CIR instead of hardcoded in the backend.
 
 ---
 
-## Phase 5
+## References
 
-Validation
-
-- Repressilator benchmark
-- SBOL validation
-- Golden IR tests
-- Biological verification
-
----
-
-# Future Backends
-
-The architecture has been designed to support multiple exporters.
-
-Planned targets include
-
-- SBOL
-- BioBrick
-- DNA sequences
-- JSON
-- SVG
-- Laboratory protocols
-
-Future backends can be added without changing the compiler frontend.
-
----
-
-# Mathematical Foundation
-
-Future simulation is based on deterministic Ordinary Differential Equations using Hill kinetics.
-
-Optimization will use NSGA-II to search for parameter sets that balance
-
-- Desired expression
-- Metabolic burden
-- Robustness
-
-These mathematical models are specified in the architecture but have not yet been implemented.
-
----
-
-# Testing Strategy
-
-Current and planned testing includes
-
-- Lexer unit tests
-- Parser unit tests
-- AST verification
-- Golden IR snapshot testing
-- Simulation benchmark validation
-- Pareto front verification
-- SBOL round-trip testing
-
----
-
-# Roadmap
-
-- [x] Compiler architecture
-- [x] Lexer
-- [x] AST
-- [x] Circuit IR architecture
-- [x] Backend abstraction
-- [ ] Semantic Analyzer
-- [ ] Complete Parser
-- [ ] Simulation Engine
-- [ ] Optimization Engine
-- [ ] SBOL Exporter
-- [ ] DNA Exporter
-- [ ] Plugin System
-- [ ] Cloud Compiler
-- [ ] Documentation
-
----
-
-# Disclaimer
-
-Cyto Logic is an active research project.
-
-The current repository represents the compiler foundation. Many architectural components described in the documentation have been specified but are still under development.
-
-The project is intended for research, experimentation, and learning in compiler design and synthetic biology.
-
----
-
-# References
-
-- LLVM Compiler Infrastructure
-- SBOL (Synthetic Biology Open Language)
-- iGEM Registry of Standard Biological Parts
-- Hill Function Models
-- NSGA-II Multi-objective Optimization
+- iGEM Registry: https://parts.igem.org
+- SBOL Standard: https://sbolstandard.org
+- Nielsen et al., "Genetic circuit design automation" (Science, 2016)
+- LLVM compiler architecture (for the IR design inspiration)
