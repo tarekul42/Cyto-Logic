@@ -15,13 +15,12 @@ class SVGBackend(Backend):
         return "SVG"
 
     def generate(self, cir, title="Circuit Diagram"):
-        nodes_dict = dict(cir._nodes.items()) if hasattr(cir, '_nodes') else dict(cir.nodes)
-        edges = list(cir._edges) if hasattr(cir, '_edges') else list(cir.edges)
+        nodes_dict = dict(cir.nodes)
+        edges = list(cir.edges)
         parts = cir.all_parts
 
         levels, positions = self._layout(nodes_dict, edges)
-
-        width, height, node_positions = self._compute_dimensions(levels, positions, parts)
+        width, height = self._compute_dimensions(levels, positions, parts)
         svg_elements = []
         svg_elements.append(self._render_defs())
         svg_elements.append(self._render_background(width, height))
@@ -100,7 +99,7 @@ class SVGBackend(Backend):
         height = PADDING * 2 + max_vertical * V_SPACING + NODE_H
         if parts:
             height += 40 + len(parts) * 22
-        return int(width), int(height), {}
+        return int(width), int(height)
 
     def _render_defs(self):
         return (
@@ -113,7 +112,7 @@ class SVGBackend(Backend):
         )
 
     def _render_background(self, width, height):
-        return f'<rect width="{width}" height="{height}" fill="#fafafa" rx="8" />'
+        return f'<rect width="{width}" height="{height}" fill="#f8f9fa" rx="8" />'
 
     def _render_node(self, x, y, label, ntype):
         cx = x + NODE_W // 2

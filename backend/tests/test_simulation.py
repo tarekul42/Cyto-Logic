@@ -66,6 +66,12 @@ class TestGateCombiners:
         result = or_combine(0.5, 0.5)
         assert result == pytest.approx(0.75, rel=1e-3)
 
+    def test_or_never_negative(self):
+        for vmax in [1, 5, 10, 20, 100]:
+            for a1 in [0, vmax/2, vmax, vmax*2]:
+                for a2 in [0, vmax/2, vmax, vmax*2]:
+                    assert or_combine(a1, a2) >= 0.0
+
     def test_and_both_zero(self):
         assert and_combine(0, 0) == 0.0
 
@@ -236,7 +242,7 @@ class TestSimulation:
         assert result.num_points == 101
 
     def test_simulation_backend_now_returns_data(self):
-        from compiler.backends.simulation_stub import SimulationBackend
+        from compiler.backends.simulation_backend import SimulationBackend
         ir = CircuitIR(logic_statement="IF aTc -> GFP")
         ir.add_node("n1", "aTc", "input")
         ir.add_node("n2", "NOT", "gate")

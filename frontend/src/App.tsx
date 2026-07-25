@@ -6,14 +6,16 @@ import CircuitsPanel from './components/CircuitsPanel';
 import OutputPanel from './components/OutputPanel';
 import SectionHeader from './components/SectionHeader';
 import { ToastProvider } from './components/Toast';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import type { Node, Edge } from '@xyflow/react';
 import type { CompileResult } from './api/compilerApi';
 
-export default function App() {
+function AppInner() {
   const [result, setResult] = useState<CompileResult | null>(null);
   const [circuitKey, setCircuitKey] = useState(0);
   const [loadedCircuit, setLoadedCircuit] = useState<{ nodes: Node[]; edges: Edge[] } | null>(null);
   const [currentCircuit, setCurrentCircuit] = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] });
+  const { theme, toggleTheme } = useTheme();
 
   const handleCircuitChange = useCallback((nodes: Node[], edges: Edge[]) => {
     setCurrentCircuit({ nodes, edges })
@@ -26,7 +28,6 @@ export default function App() {
   }, []);
 
   return (
-    <ToastProvider>
     <div className="h-screen flex font-body bg-canvas text-text-primary">
       <div className="w-55 shrink-0 border-r border-border bg-panel flex flex-col">
         <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border"
@@ -58,10 +59,26 @@ export default function App() {
       <div className="w-[320px] shrink-0 border-l border-border bg-panel flex flex-col">
         <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
           <SectionHeader className="mb-0">Results</SectionHeader>
+          <button
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+            className="ml-auto bg-transparent border border-border-light rounded-md cursor-pointer text-text-secondary px-2 py-1 text-[11px] font-mono hover:border-text-tertiary"
+          >
+            {theme === 'dark' ? '\u2600' : '\u263E'}
+          </button>
         </div>
         <OutputPanel result={result} />
       </div>
     </div>
-    </ToastProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <AppInner />
+      </ToastProvider>
+    </ThemeProvider>
   );
 }

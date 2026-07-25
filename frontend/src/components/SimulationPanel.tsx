@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -23,9 +23,14 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
   const [tStart, setTStart] = useState(0);
   const [tEnd, setTEnd] = useState(100);
   const [dt, setDt] = useState(1.0);
+  const [hillN, setHillN] = useState(2.0);
+  const [kd, setKd] = useState(0.01);
+  const [vmax, setVmax] = useState(10.0);
+  const [delta, setDelta] = useState(0.5);
   const toast = useToast();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const handleSimulate = async () => {
+  const runSimulation = useCallback(async (params?: Record<string, number>) => {
     if (!logic) return;
     const t0 = Number(tStart);
     const t1 = Number(tEnd);
@@ -50,13 +55,18 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     setIsSimulating(true);
     setError(null);
     try {
-      const result = await simulateCircuit(logic, {}, [t0, t1], dtVal);
+      const simParams = params ?? {
+        hill_n: hillN,
+        kd: kd,
+        vmax: vmax,
+        delta: delta,
+      };
+      const result = await simulateCircuit(logic, {}, [t0, t1], dtVal, simParams);
       if (result.success === false) {
         setError(result.error || 'Simulation failed');
         toast('Simulation failed', 'error');
       } else {
         setSimResult(result);
-        toast('Simulation complete', 'success');
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Simulation request failed';
@@ -65,6 +75,40 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     } finally {
       setIsSimulating(false);
     }
+  }, [logic, tStart, tEnd, dt, hillN, kd, vmax, delta, toast]);
+
+  const debouncedRun = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const params = { hill_n: hillN, kd, vmax, delta };
+      runSimulation(params);
+    }, 300);
+  }, [hillN, kd, vmax, delta, runSimulation]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleHillChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setHillN(Number(e.target.value));
+    debouncedRun();
+  };
+
+  const handleKdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setKd(Number(e.target.value));
+    debouncedRun();
+  };
+
+  const handleVmaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setVmax(Number(e.target.value));
+    debouncedRun();
+  };
+
+  const handleDeltaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDelta(Number(e.target.value));
+    debouncedRun();
   };
 
   const chartData = simResult?.times?.map((t, i) => {
@@ -76,6 +120,44 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
     }
     return point;
   });
+
+  const handleSimulate = () => runSimulation();
+
+  const paramSlider = (
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+  ) => (
+    <div className="flex items-center gap-2 text-[11px] text-text-secondary">
+      <span className="w-6 shrink-0 text-right">{label}</span>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={onChange}
+        className="flex-1 h-1 rounded-full appearance-none cursor-pointer"
+        style={{
+          accentColor: 'var(--color-primary)',
+          background: 'var(--color-border)',
+        }}
+      />
+      <input
+        type="number" min={min} max={max} step={step} value={value}
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          if (!isNaN(v) && v >= min && v <= max) {
+            if (label === 'n') setHillN(v);
+            else if (label === 'Kd') setKd(v);
+            else if (label === 'α') setVmax(v);
+            else if (label === 'γ') setDelta(v);
+            debouncedRun();
+          }
+        }}
+        className="text-[11px] font-mono bg-input border border-input-border rounded text-text-primary text-center outline-none w-14 px-1 py-0.5"
+      />
+    </div>
+  );
 
   return (
     <div>
@@ -106,6 +188,14 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
           <input type="number" step="0.1" value={dt} onChange={(e) => setDt(Number(e.target.value))}
             className="text-[11px] font-mono bg-input border border-input-border rounded text-text-primary text-center outline-none w-[48px] px-1.5 py-1" />
         </label>
+      </div>
+
+      <div className="mb-3 space-y-1.5 bg-surface rounded-lg p-2.5">
+        <SectionHeader className="!tracking-[4px] !mb-1.5">ODE Parameters</SectionHeader>
+        {paramSlider('n', hillN, 1.0, 4.0, 0.1, handleHillChange)}
+        {paramSlider('Kd', kd, 0.001, 1.0, 0.001, handleKdChange)}
+        {paramSlider('α', vmax, 1.0, 20.0, 0.5, handleVmaxChange)}
+        {paramSlider('γ', delta, 0.1, 1.0, 0.1, handleDeltaChange)}
       </div>
 
       {error && <ErrorBox>{error}</ErrorBox>}

@@ -2,35 +2,38 @@ class ASTNode:
     pass
 
 class ProteinNode(ASTNode):
-    def __init__(self, name):
+    def __init__(self, name, strand="+"):
         self.name = name
+        self.strand = strand
 
     def __repr__(self):
-        return f"Protein({self.name})"
+        return f"Protein({self.name}, strand={self.strand!r})"
 
 class NotGate(ASTNode):
-    # NOT always operates on one operand
-    def __init__(self, input_node):
+    def __init__(self, input_node, strand="+"):
         self.input = input_node
+        self.strand = strand
 
     def __repr__(self):
-        return f"NOT({self.input})"
+        return f"NOT({self.input}, strand={self.strand!r})"
 
 class AndGate(ASTNode):
-    def __init__(self, left, right):
+    def __init__(self, left, right, strand="+"):
         self.left = left
         self.right = right
+        self.strand = strand
 
     def __repr__(self):
-        return f"({self.left} AND {self.right})"
+        return f"({self.left} AND {self.right}, strand={self.strand!r})"
 
 class OrGate(ASTNode):
-    def __init__(self, left, right):
+    def __init__(self, left, right, strand="+"):
         self.left = left
         self.right = right
+        self.strand = strand
 
     def __repr__(self):
-        return f"({self.left} OR {self.right})"
+        return f"({self.left} OR {self.right}, strand={self.strand!r})"
 
 class Circuit(ASTNode):
     def __init__(self, condition, output):

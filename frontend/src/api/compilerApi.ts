@@ -15,6 +15,7 @@ interface SimulationPayload {
   inputs?: Record<string, number>
   t_span?: number[]
   dt?: number
+  params?: Record<string, number>
 }
 
 interface ExportPayload {
@@ -72,9 +73,10 @@ export const simulateCircuit = async (
   inputs: Record<string, number> = {},
   tSpan: number[] = [0, 100],
   dt: number = 1.0,
+  params: Record<string, number> = {},
   signal?: AbortSignal
 ): Promise<SimResult> => {
-  const payload: SimulationPayload = { logic, inputs, t_span: tSpan, dt }
+  const payload: SimulationPayload = { logic, inputs, t_span: tSpan, dt, params }
   const response = await axios.post(`${API_BASE}/simulate`, payload, { timeout: 60000, signal });
   return response.data as SimResult;
 };

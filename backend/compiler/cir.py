@@ -21,8 +21,8 @@ class CircuitIR:
     def add_edge(self, source_id, target_id):
         self._edges.append((source_id, target_id))
 
-    def add_part(self, part_id, role, info):
-        self._parts.append({"id": part_id, "role": role, "info": info})
+    def add_part(self, part_id, role, info, strand="+"):
+        self._parts.append({"id": part_id, "role": role, "info": info, "strand": strand})
 
     @property
     def all_parts(self):
@@ -83,7 +83,8 @@ class CircuitIR:
         for source, target in payload.get("graph", {}).get("edges", []):
             ir.add_edge(source, target)
         for part in payload.get("parts", []):
-            ir.add_part(part["id"], part["role"], part["info"])
+            ir.add_part(part["id"], part["role"], part["info"],
+                        strand=part.get("strand", "+"))
         return ir
 
     def validate(self):

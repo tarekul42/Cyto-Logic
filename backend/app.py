@@ -93,6 +93,14 @@ def graph_to_logic(nodes, edges):
             elements = [trace_back(p, visited) for p in parent_links]
             return f"({' OR '.join(elements)})"
 
+        if kind == 'NAND':
+            elements = [trace_back(p, visited) for p in parent_links]
+            return f"(NOT ({' AND '.join(elements)}))"
+
+        if kind == 'NOR':
+            elements = [trace_back(p, visited) for p in parent_links]
+            return f"(NOT ({' OR '.join(elements)}))"
+
         if kind == 'OUTPUT':
             return trace_back(parent_links[0], visited)
 
@@ -191,6 +199,46 @@ def handle_sbol_download():
 
     except Exception as e:
         app.logger.exception("SBOL export failed")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/export/genbank', methods=['POST'])
+@rate_limit
+def handle_genbank_export():
+    payload = request.get_json() or {}
+    statement = payload.get('logic')
+    project_title = sanitize_filename(payload.get('name', 'circuit'), 'circuit')
+
+    try:
+        if statement:
+            pipeline = CompilerPipeline()
+            cir, _ = pipeline.run(statement)
+        else:
+            target_parts = payload.get('parts', [])
+            if not isinstance(target_parts, list) or len(target_parts) > 500:
+                return jsonify({
+                    "success": False,
+                    "error": "Parts list must be an array of at most 500 items."
+                }), 400
+            from compiler.cir import CircuitIR
+            cir = CircuitIR()
+            for p in target_parts:
+                cir.add_part(p["id"], p["role"], p["info"])
+
+        backend = get_backend("GenBank")
+        genbank_data = backend.generate(cir, circuit_name=project_title)
+
+        return Response(
+            genbank_data,
+            mimetype='text/plain',
+            headers={
+                "Content-Disposition":
+                    f"attachment; filename={project_title}.gb"
+            }
+        )
+
+    except Exception as e:
+        app.logger.exception("GenBank export failed")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
@@ -298,6 +346,7 @@ def handle_simulation():
     inputs = payload.get('inputs', {})
     t_span = payload.get('t_span', [0, 100])
     dt = payload.get('dt', 0.01)
+    params = payload.get('params', {})
 
     if not statement:
         return jsonify({
@@ -306,11 +355,11 @@ def handle_simulation():
         }), 400
 
     try:
-        from compiler.backends.simulation_stub import SimulationBackend
+        from compiler.backends.simulation_backend import SimulationBackend
         pipeline = CompilerPipeline()
         cir, _ = pipeline.run(statement)
         backend = SimulationBackend(t_span=tuple(t_span), dt=dt)
-        result = backend.generate(cir, inputs=inputs)
+        result = backend.generate(cir, inputs=inputs, params=params)
         result["success"] = True
         return jsonify(result)
     except SyntaxError as syn_ex:
@@ -346,8 +395,8 @@ def handle_optimization():
     inputs = payload.get('inputs', {})
     t_span = payload.get('t_span', [0, 100])
     dt = payload.get('dt', 1.0)
-    pop_size = payload.get('pop_size', 20)
-    generations = payload.get('generations', 5)
+    pop_size = payload.get('pop_size', 50)
+    generations = payload.get('generations', 20)
     target_output = payload.get('target_output', 10.0)
 
     if not statement:

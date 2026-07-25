@@ -20,6 +20,10 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     console.error('ErrorBoundary caught:', error, info)
   }
 
+  handleReset = () => {
+    this.setState({ hasError: false, error: null })
+  }
+
   render() {
     if (this.state.hasError) {
       return (
@@ -31,6 +35,16 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
             <div style={{ color: 'var(--color-text-tertiary)', fontSize: 'var(--size-font-small)' }}>
               {this.state.error?.message}
             </div>
+            <button
+              onClick={this.handleReset}
+              className="mt-4 px-4 py-2 rounded-md font-semibold text-[13px] border-none cursor-pointer"
+              style={{
+                background: 'var(--color-primary)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              Try again
+            </button>
           </div>
         </div>
       )

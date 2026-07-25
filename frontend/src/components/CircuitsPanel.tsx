@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useToast } from './Toast'
 import type { Node, Edge } from '@xyflow/react'
 import { ICON } from '../constants'
-import { StorageError } from '../errors'
+
 import { TEMPLATES } from '../lib/circuitTemplates'
 import type { CircuitTemplate } from '../lib/circuitTemplates'
 
@@ -37,9 +37,8 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
   const persistSaved = (list: SavedCircuit[]) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-    } catch (e) {
-      const err = e instanceof StorageError ? e : new StorageError('Could not save circuit (storage may be full)')
-      toast(err.message, 'error')
+    } catch {
+      toast('Could not save circuit (storage may be full)', 'error')
       return
     }
     setSavedCircuits(list)

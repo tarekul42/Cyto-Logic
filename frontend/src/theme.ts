@@ -30,6 +30,18 @@ export const gateConfig: Record<string, GateConfig> = {
     bg:      '#4a2a5a',
     border:  '#7a4a8a',
   },
+  NAND: {
+    icon:    '!&',
+    label:   'NAND',
+    bg:      '#3a2a4a',
+    border:  '#6a4a7a',
+  },
+  NOR: {
+    icon:    '!|',
+    label:   'NOR',
+    bg:      '#3a2a4a',
+    border:  '#6a4a7a',
+  },
   OUTPUT: {
     icon:    '\u25C6',
     label:   'Output',

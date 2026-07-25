@@ -71,6 +71,28 @@ def rate_limit(f):
     return wrapper
 
 
+def _validate_list_field(payload, key, max_items):
+    value = payload.get(key)
+    if value is not None:
+        if not isinstance(value, list):
+            return [f"'{key}' must be an array"]
+        if len(value) > max_items:
+            return [f"'{key}' exceeds {max_items} item limit"]
+    return []
+
+
+def _validate_number_field(payload, key, lo=None, hi=None):
+    value = payload.get(key)
+    if value is not None:
+        if not isinstance(value, (int, float)):
+            return [f"'{key}' must be a number"]
+        if lo is not None and value < lo:
+            return [f"'{key}' must be >= {lo}"]
+        if hi is not None and value > hi:
+            return [f"'{key}' must be <= {hi}"]
+    return []
+
+
 def validate_input(payload):
     errors = []
     for key in ("logic",):
@@ -80,11 +102,31 @@ def validate_input(payload):
                 errors.append(f"'{key}' must be a string")
             elif len(value) > 10000:
                 errors.append(f"'{key}' exceeds 10000 character limit")
-    for key in ("nodes", "edges", "parts"):
-        value = payload.get(key)
-        if value is not None:
-            if not isinstance(value, list):
-                errors.append(f"'{key}' must be an array")
-            elif len(value) > 500:
-                errors.append(f"'{key}' exceeds 500 item limit")
+
+    errors.extend(_validate_list_field(payload, "nodes", 500))
+    errors.extend(_validate_list_field(payload, "edges", 500))
+    errors.extend(_validate_list_field(payload, "parts", 500))
+
+    t_span = payload.get("t_span")
+    if t_span is not None:
+        if not isinstance(t_span, (list, tuple)) or len(t_span) != 2:
+            errors.append("'t_span' must be an array of 2 numbers [start, end]")
+        else:
+            for i, v in enumerate(t_span):
+                if not isinstance(v, (int, float)):
+                    errors.append(f"'t_span[{i}]' must be a number")
+
+    errors.extend(_validate_number_field(payload, "dt", lo=0))
+    errors.extend(_validate_number_field(payload, "pop_size", lo=1, hi=10000))
+    errors.extend(_validate_number_field(payload, "generations", lo=1, hi=10000))
+    errors.extend(_validate_number_field(payload, "target_output", lo=0))
+
+    inputs = payload.get("inputs")
+    if inputs is not None and not isinstance(inputs, dict):
+        errors.append("'inputs' must be an object")
+
+    params = payload.get("params")
+    if params is not None and not isinstance(params, dict):
+        errors.append("'params' must be an object")
+
     return errors

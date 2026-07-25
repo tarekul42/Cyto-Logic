@@ -34,6 +34,36 @@
   --shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
+.light {
+  --color-canvas: #f4f7fa;
+  --color-panel: #ffffff;
+  --color-surface: #e8edf2;
+  --color-surface-alt: #dce3eb;
+  --color-border: #d0d8e0;
+  --color-border-light: #b8c4d0;
+  --color-primary: #009973;
+  --color-primary-dim: #007a5e;
+  --color-secondary: #2a6fc9;
+  --color-danger: #c0392b;
+  --color-danger-dim: #a93226;
+  --color-warning: #d68910;
+  --color-text-primary: #1a2838;
+  --color-text-secondary: #4a6078;
+  --color-text-tertiary: #7a8fa5;
+  --color-input: #e8edf2;
+  --color-input-border: #b8c4d0;
+  --color-node-input: #2a7ab5;
+  --color-node-input-border: #1a6a9e;
+  --color-node-gate: #7a4a8a;
+  --color-node-gate-border: #6a3a7a;
+  --color-node-output: #aa3a5a;
+  --color-node-output-border: #8a2a4a;
+  --color-success: #009973;
+  --color-error: #c0392b;
+
+  --shadow-glow: 0 0 20px rgba(0, 153, 115, 0.25);
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

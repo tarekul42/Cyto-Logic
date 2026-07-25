@@ -29,10 +29,10 @@ export type { Node, Edge }
 const nodeTypes: NodeTypes = { gateNode: GateNode as React.ComponentType<NodeProps> };
 
 const initialNodes: Node[] = [
-  { id: '1', type: 'gateNode', position: { x: 80,  y: 120 }, data: { type: 'INPUT',  label: 'aTc' } },
-  { id: '2', type: 'gateNode', position: { x: 80,  y: 240 }, data: { type: 'INPUT',  label: 'AraC' } },
-  { id: '3', type: 'gateNode', position: { x: 280, y: 180 }, data: { type: 'AND',    label: 'AND gate' } },
-  { id: '4', type: 'gateNode', position: { x: 480, y: 180 }, data: { type: 'OUTPUT', label: 'GFP' } },
+  { id: '1', type: 'gateNode', position: { x: 80,  y: 120 }, data: { type: 'INPUT',  label: 'aTc', strand: '+' } },
+  { id: '2', type: 'gateNode', position: { x: 80,  y: 240 }, data: { type: 'INPUT',  label: 'AraC', strand: '+' } },
+  { id: '3', type: 'gateNode', position: { x: 280, y: 180 }, data: { type: 'AND',    label: 'AND gate', strand: '+' } },
+  { id: '4', type: 'gateNode', position: { x: 480, y: 180 }, data: { type: 'OUTPUT', label: 'GFP', strand: '+' } },
 ];
 
 const initialEdges: Edge[] = [
@@ -104,12 +104,23 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
     );
   }, [setNodes, pushHistory]);
 
+  const handleStrandToggle = useCallback((nodeId: string) => {
+    pushHistory()
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === nodeId
+          ? { ...n, data: { ...n.data, strand: n.data.strand === '+' ? '-' : '+' } }
+          : n
+      )
+    );
+  }, [setNodes, pushHistory]);
+
   const nodesWithCallbacks = useMemo(
     () => nodes.map((n) => ({
       ...n,
-      data: { ...n.data, onLabelChange: handleLabelChange },
+      data: { ...n.data, onLabelChange: handleLabelChange, onStrandToggle: handleStrandToggle },
     })),
-    [nodes, handleLabelChange]
+    [nodes, handleLabelChange, handleStrandToggle]
   );
 
   const handleCompile = useCallback(async () => {
@@ -185,6 +196,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
       data: {
         type: nodeType,
         label: nodeType === 'INPUT' ? 'Input' : nodeType === 'OUTPUT' ? 'Output' : `${nodeType} Gate`,
+        strand: '+',
       },
     }));
   }, [setNodes, reactFlowInstance, pushHistory]);
@@ -259,7 +271,7 @@ export default function CircuitCanvas({ loadedCircuit, onCircuitChange, onResult
             return cfg ? cfg.border : 'var(--color-text-tertiary)';
           }}
           nodeBorderRadius={4}
-          maskColor="rgba(11, 25, 38, 0.8)"
+          maskColor="var(--color-canvas)"
           pannable zoomable
         />
         <Background variant={BackgroundVariant.Dots} gap={20} size={1.5} color="var(--color-border)" />

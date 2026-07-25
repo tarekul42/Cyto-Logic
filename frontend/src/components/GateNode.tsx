@@ -5,7 +5,9 @@ import { gateConfig } from '../theme';
 interface GateNodeData extends Record<string, unknown> {
   type: string
   label: string
+  strand?: string
   onLabelChange?: (nodeId: string, newLabel: string) => void
+  onStrandToggle?: (nodeId: string) => void
 }
 
 export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
@@ -13,6 +15,7 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
   const [editValue, setEditValue] = useState(data.label);
   const inputRef = useRef<HTMLInputElement>(null);
   const cfg = gateConfig[data.type] || gateConfig.INPUT;
+  const strand = data.strand || '+';
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -38,6 +41,11 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleFinishEdit();
     if (e.key === 'Escape') setEditing(false);
+  };
+
+  const handleStrandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    data.onStrandToggle?.(id);
   };
 
   const isNot = data.type === 'NOT';
@@ -127,6 +135,19 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
           }}
         />
       )}
+
+      <button
+        onClick={handleStrandToggle}
+        title={`Strand: ${strand === '+' ? 'forward' : 'reverse'}`}
+        className="absolute -top-2 -right-2 text-[10px] font-bold font-mono leading-none rounded-full border cursor-pointer z-10 size-4.5 flex items-center justify-center"
+        style={{
+          background: strand === '+' ? 'var(--color-primary)' : 'var(--color-danger)',
+          color: '#fff',
+          border: '2px solid var(--color-panel)',
+        }}
+      >
+        {strand}
+      </button>
     </div>
   );
 }

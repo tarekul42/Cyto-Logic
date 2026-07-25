@@ -27,8 +27,13 @@ def hill_repressor(concentration, vmax=DEFAULT_VMAX, kd=DEFAULT_KD, n=DEFAULT_HI
     return vmax * (kd ** n) / (kd ** n + concentration ** n)
 
 
-def or_combine(act1, act2):
-    return act1 + act2 - act1 * act2
+def or_combine(act1, act2, vmax=None):
+    if vmax is not None and vmax > 0:
+        p1 = max(0.0, min(act1, vmax)) / vmax
+        p2 = max(0.0, min(act2, vmax)) / vmax
+        return vmax * (p1 + p2 - p1 * p2)
+    val = act1 + act2 - act1 * act2
+    return max(0.0, val)
 
 
 def and_combine(act1, act2):
