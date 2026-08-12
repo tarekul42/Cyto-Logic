@@ -1,13 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { gateConfig } from '../theme';
+import { useState, useRef, useEffect } from "react";
+import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+import { gateConfig } from "../theme";
 
 interface GateNodeData extends Record<string, unknown> {
-  type: string
-  label: string
-  strand?: string
-  onLabelChange?: (nodeId: string, newLabel: string) => void
-  onStrandToggle?: (nodeId: string) => void
+  type: string;
+  label: string;
+  strand?: string;
+  onLabelChange?: (nodeId: string, newLabel: string) => void;
+  onStrandToggle?: (nodeId: string) => void;
 }
 
 export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
@@ -15,7 +15,7 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
   const [editValue, setEditValue] = useState(data.label);
   const inputRef = useRef<HTMLInputElement>(null);
   const cfg = gateConfig[data.type] || gateConfig.INPUT;
-  const strand = data.strand || '+';
+  const strand = data.strand || "+";
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -39,8 +39,8 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleFinishEdit();
-    if (e.key === 'Escape') setEditing(false);
+    if (e.key === "Enter") handleFinishEdit();
+    if (e.key === "Escape") setEditing(false);
   };
 
   const handleStrandToggle = (e: React.MouseEvent) => {
@@ -48,15 +48,15 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
     data.onStrandToggle?.(id);
   };
 
-  const isNot = data.type === 'NOT';
-  const isOutput = data.type === 'OUTPUT';
-  const isInput = data.type === 'INPUT';
+  const isNot = data.type === "NOT";
+  const isOutput = data.type === "OUTPUT";
+  const isInput = data.type === "INPUT";
 
   const borderRadius = isInput
-    ? 'rounded-tl-lg rounded-bl-lg rounded-tr-[4px] rounded-br-[4px]'
+    ? "rounded-tl-lg rounded-bl-lg rounded-tr-[4px] rounded-br-[4px]"
     : isOutput
-    ? 'rounded-tr-lg rounded-br-lg rounded-tl-[4px] rounded-bl-[4px]'
-    : 'rounded-[4px]'
+      ? "rounded-tr-lg rounded-br-lg rounded-tl-[4px] rounded-bl-[4px]"
+      : "rounded-[4px]";
 
   return (
     <div
@@ -67,33 +67,37 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
       }}
       onDoubleClick={handleDoubleClick}
       onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = 'var(--shadow-lift)'
-        e.currentTarget.style.borderColor = 'var(--color-primary)'
+        e.currentTarget.style.boxShadow = "var(--shadow-lift)";
+        e.currentTarget.style.borderColor = "var(--color-primary)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.3)'
-        e.currentTarget.style.borderColor = cfg.border
+        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.3)";
+        e.currentTarget.style.borderColor = cfg.border;
       }}
     >
       {!isInput && (
         <>
           <Handle
-            type="target" position={Position.Left} id="a"
+            type="target"
+            position={Position.Left}
+            id="a"
             className="size-2.5! rounded-full!"
             style={{
-              top: isNot ? '50%' : '30%',
-              background: 'var(--color-text-secondary)',
-              border: '2px solid var(--color-panel)',
+              top: isNot ? "50%" : "30%",
+              background: "var(--color-text-secondary)",
+              border: "2px solid var(--color-panel)",
             }}
           />
           {!isNot && (
             <Handle
-              type="target" position={Position.Left} id="b"
+              type="target"
+              position={Position.Left}
+              id="b"
               className="size-2.5! rounded-full!"
               style={{
-                top: '70%',
-                background: 'var(--color-text-secondary)',
-                border: '2px solid var(--color-panel)',
+                top: "70%",
+                background: "var(--color-text-secondary)",
+                border: "2px solid var(--color-panel)",
               }}
             />
           )}
@@ -127,23 +131,25 @@ export default function GateNode({ id, data }: NodeProps<Node<GateNodeData>>) {
 
       {!isOutput && (
         <Handle
-          type="source" position={Position.Right}
+          type="source"
+          position={Position.Right}
           className="size-2.5! rounded-full!"
           style={{
-            background: 'var(--color-primary)',
-            border: '2px solid var(--color-panel)',
+            background: "var(--color-primary)",
+            border: "2px solid var(--color-panel)",
           }}
         />
       )}
 
       <button
         onClick={handleStrandToggle}
-        title={`Strand: ${strand === '+' ? 'forward' : 'reverse'}`}
+        title={`Strand: ${strand === "+" ? "forward" : "reverse"}`}
         className="absolute -top-2 -right-2 text-[10px] font-bold font-mono leading-none rounded-full border cursor-pointer z-10 size-4.5 flex items-center justify-center"
         style={{
-          background: strand === '+' ? 'var(--color-primary)' : 'var(--color-danger)',
-          color: '#fff',
-          border: '2px solid var(--color-panel)',
+          background:
+            strand === "+" ? "var(--color-primary)" : "var(--color-danger)",
+          color: "#fff",
+          border: "2px solid var(--color-panel)",
         }}
       >
         {strand}

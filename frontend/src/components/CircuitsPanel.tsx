@@ -1,112 +1,135 @@
-import { useState } from 'react'
-import { useToast } from './Toast'
-import type { Node, Edge } from '@xyflow/react'
-import { ICON } from '../constants'
+import { useState } from "react";
+import { useToast } from "./Toast";
+import type { Node, Edge } from "@xyflow/react";
+import { ICON } from "../constants";
 
-import { TEMPLATES } from '../lib/circuitTemplates'
-import type { CircuitTemplate } from '../lib/circuitTemplates'
+import { TEMPLATES } from "../lib/circuitTemplates";
+import type { CircuitTemplate } from "../lib/circuitTemplates";
 
-const STORAGE_KEY = 'cyto-logic-circuits'
+const STORAGE_KEY = "cyto-logic-circuits";
 
 interface SavedCircuit {
-  name: string
-  nodes: Node[]
-  edges: Edge[]
-  savedAt: number
+  name: string;
+  nodes: Node[];
+  edges: Edge[];
+  savedAt: number;
 }
 
 interface CircuitsPanelProps {
-  nodes: Node[]
-  edges: Edge[]
-  onLoad: (nodes: Node[], edges: Edge[]) => void
+  nodes: Node[];
+  edges: Edge[];
+  onLoad: (nodes: Node[], edges: Edge[]) => void;
 }
 
-export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelProps) {
-  const toast = useToast()
-  const [showSaved, setShowSaved] = useState(false)
-  const [showTemplates, setShowTemplates] = useState(false)
-  const [saveName, setSaveName] = useState('')
+export default function CircuitsPanel({
+  nodes,
+  edges,
+  onLoad,
+}: CircuitsPanelProps) {
+  const toast = useToast();
+  const [showSaved, setShowSaved] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [saveName, setSaveName] = useState("");
   const [savedCircuits, setSavedCircuits] = useState<SavedCircuit[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as SavedCircuit[]
+      return JSON.parse(
+        localStorage.getItem(STORAGE_KEY) || "[]",
+      ) as SavedCircuit[];
     } catch {
-      return []
+      return [];
     }
-  })
+  });
 
   const persistSaved = (list: SavedCircuit[]) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     } catch {
-      toast('Could not save circuit (storage may be full)', 'error')
-      return
+      toast("Could not save circuit (storage may be full)", "error");
+      return;
     }
-    setSavedCircuits(list)
-  }
+    setSavedCircuits(list);
+  };
 
   const handleSave = () => {
-    const name = saveName.trim()
-    if (!name) { toast('Enter a circuit name', 'warning'); return }
-    const data: SavedCircuit = { name, nodes, edges, savedAt: Date.now() }
-    const existing = savedCircuits.findIndex((c) => c.name === name)
-    let updated: SavedCircuit[]
-    if (existing >= 0) {
-      updated = [...savedCircuits]
-      updated[existing] = data
-    } else {
-      updated = [...savedCircuits, data]
+    const name = saveName.trim();
+    if (!name) {
+      toast("Enter a circuit name", "warning");
+      return;
     }
-    persistSaved(updated)
-    setSaveName('')
-    toast(`Saved "${name}"`, 'success')
-  }
+    const data: SavedCircuit = { name, nodes, edges, savedAt: Date.now() };
+    const existing = savedCircuits.findIndex((c) => c.name === name);
+    let updated: SavedCircuit[];
+    if (existing >= 0) {
+      updated = [...savedCircuits];
+      updated[existing] = data;
+    } else {
+      updated = [...savedCircuits, data];
+    }
+    persistSaved(updated);
+    setSaveName("");
+    toast(`Saved "${name}"`, "success");
+  };
 
   const handleLoad = (circuit: SavedCircuit) => {
-    onLoad(circuit.nodes, circuit.edges)
-    toast(`Loaded "${circuit.name}"`, 'info')
-  }
+    onLoad(circuit.nodes, circuit.edges);
+    toast(`Loaded "${circuit.name}"`, "info");
+  };
 
   const handleDelete = (name: string) => {
-    persistSaved(savedCircuits.filter((c) => c.name !== name))
-    toast(`Deleted "${name}"`, 'info')
-  }
+    persistSaved(savedCircuits.filter((c) => c.name !== name));
+    toast(`Deleted "${name}"`, "info");
+  };
 
   const handleTemplate = (t: CircuitTemplate) => {
-    onLoad(t.nodes, t.edges)
-    toast(`Loaded "${t.name}" template`, 'info')
-  }
+    onLoad(t.nodes, t.edges);
+    toast(`Loaded "${t.name}" template`, "info");
+  };
 
-  const sectionHeaderClass = 'text-[11px] font-bold text-text-tertiary uppercase cursor-pointer select-none px-4 py-2 border-b border-border transition-[color] duration-150 hover:text-text-secondary tracking-[5px]'
+  const sectionHeaderClass =
+    "text-[11px] font-bold text-text-tertiary uppercase cursor-pointer select-none px-4 py-2 border-b border-border transition-[color] duration-150 hover:text-text-secondary tracking-[5px]";
 
   return (
     <div className="border-t border-border mt-auto">
-      <div className={sectionHeaderClass} onClick={() => setShowTemplates(!showTemplates)}>
+      <div
+        className={sectionHeaderClass}
+        onClick={() => setShowTemplates(!showTemplates)}
+      >
         {showTemplates ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Templates
       </div>
       {showTemplates && (
         <div className="px-4 py-2">
           {TEMPLATES.map((t) => (
-            <button key={t.name} onClick={() => handleTemplate(t)}
-              className="w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded text-[11px] text-text-secondary cursor-pointer hover:bg-surface-alt">
+            <button
+              key={t.name}
+              onClick={() => handleTemplate(t)}
+              className="w-full text-left px-2.5 py-1.5 mb-1 bg-surface border border-border rounded text-[11px] text-text-secondary cursor-pointer hover:bg-surface-alt"
+            >
               {t.name}
             </button>
           ))}
         </div>
       )}
 
-      <div className={sectionHeaderClass} onClick={() => setShowSaved(!showSaved)}>
+      <div
+        className={sectionHeaderClass}
+        onClick={() => setShowSaved(!showSaved)}
+      >
         {showSaved ? ICON.EXPAND_DOWN : ICON.EXPAND_RIGHT} Saved
       </div>
       {showSaved && (
         <div className="px-4 py-2 max-h-50 overflow-y-auto">
           <div className="flex gap-1 mb-2">
-            <input value={saveName} onChange={(e) => setSaveName(e.target.value)}
+            <input
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
               placeholder="Circuit name"
               className="flex-1 px-2 py-1.5 text-[11px] bg-input border border-input-border rounded text-text-primary outline-none font-body"
-              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              onKeyDown={(e) => e.key === "Enter" && handleSave()}
             />
-            <button onClick={handleSave}
-              className="px-2.5 py-1.5 bg-primary text-text-primary border-none rounded cursor-pointer text-[11px] font-semibold whitespace-nowrap">
+            <button
+              onClick={handleSave}
+              className="px-2.5 py-1.5 bg-primary text-text-primary border-none rounded cursor-pointer text-[11px] font-semibold whitespace-nowrap"
+            >
               Save
             </button>
           </div>
@@ -117,12 +140,16 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
           )}
           {savedCircuits.map((c) => (
             <div key={c.name} className="flex gap-1 mb-1">
-              <button onClick={() => handleLoad(c)}
-                className="flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded text-[11px] text-text-secondary cursor-pointer hover:bg-surface-alt">
+              <button
+                onClick={() => handleLoad(c)}
+                className="flex-1 text-left px-2.5 py-1.5 bg-surface border border-border rounded text-[11px] text-text-secondary cursor-pointer hover:bg-surface-alt"
+              >
                 {c.name}
               </button>
-              <button onClick={() => handleDelete(c.name)}
-                className="px-2 py-1.5 bg-transparent border border-border rounded cursor-pointer text-[11px] text-text-tertiary hover:text-danger">
+              <button
+                onClick={() => handleDelete(c.name)}
+                className="px-2 py-1.5 bg-transparent border border-border rounded cursor-pointer text-[11px] text-text-tertiary hover:text-danger"
+              >
                 {ICON.DELETE}
               </button>
             </div>
@@ -130,5 +157,5 @@ export default function CircuitsPanel({ nodes, edges, onLoad }: CircuitsPanelPro
         </div>
       )}
     </div>
-  )
+  );
 }

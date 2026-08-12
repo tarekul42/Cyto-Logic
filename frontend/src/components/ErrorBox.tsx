@@ -1,11 +1,14 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
 interface ErrorBoxProps {
-  children: ReactNode
-  color?: string
+  children: ReactNode;
+  color?: string;
 }
 
-export default function ErrorBox({ children, color = 'var(--color-error)' }: ErrorBoxProps) {
+export default function ErrorBox({
+  children,
+  color = "var(--color-error)",
+}: ErrorBoxProps) {
   return (
     <div
       className="text-xs px-2.5 py-1.5 rounded"
@@ -17,5 +20,5 @@ export default function ErrorBox({ children, color = 'var(--color-error)' }: Err
     >
       {children}
     </div>
-  )
+  );
 }
