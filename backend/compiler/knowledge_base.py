@@ -18,7 +18,7 @@ def _load():
         )
     try:
         with open(_KB_PATH, "r") as f:
-            _DATA = json.load(f)
+            _DATA = json.load(f)  # pyright: ignore[reportConstantRedefinition]
     except (json.JSONDecodeError, OSError) as exc:
         logging.error("Failed to load Knowledge Base: %s", exc)
         raise RuntimeError(
@@ -29,7 +29,7 @@ def _load():
 
 def reload():
     global _DATA
-    _DATA = None
+    _DATA = None  # pyright: ignore[reportConstantRedefinition]
     return _load()
 
 

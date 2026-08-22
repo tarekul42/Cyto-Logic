@@ -26,7 +26,7 @@ def _build_gate_map():
 def get_gate_map():
     global _GATE_IMPL_MAP
     if _GATE_IMPL_MAP is None:
-        _GATE_IMPL_MAP = _build_gate_map()
+        _GATE_IMPL_MAP = _build_gate_map()  # pyright: ignore[reportConstantRedefinition]
     return _GATE_IMPL_MAP
 
 

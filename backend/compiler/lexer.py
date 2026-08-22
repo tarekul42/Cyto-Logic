@@ -62,7 +62,7 @@ class BioLexer:
                 self.tokens.append(Token('Arrow', '->', start_pos))
                 continue
             # Protein names and keywords both start the same way,so read the whole word first.
-            if self.char in BioLexer.letters:
+            if self.char is not None and self.char in BioLexer.letters:
 
                 word = ""
                 start_pos = self.idx

@@ -19,15 +19,15 @@ DEFAULT_PARAMS = {
 
 
 class Individual:
-    def __init__(self, num_species):
+    def __init__(self, num_species: int) -> None:
         self.num_species = num_species
-        self._params = [
+        self._params: list[dict[str, float]] = [
             {name: DEFAULT_PARAMS[name] for name in PARAM_NAMES}
             for _ in range(num_species)
         ]
-        self.objectives = []
-        self.rank = -1
-        self.crowding_distance = 0.0
+        self.objectives: list[float] = []
+        self.rank: int = -1
+        self.crowding_distance: float = 0.0
 
     def encode(self):
         flat = []

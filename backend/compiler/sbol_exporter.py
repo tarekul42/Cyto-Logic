@@ -1,3 +1,5 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportOptionalMemberAccess=false
+# sbol2 exposes properties dynamically; its type stubs don't model them.
 import sbol2
 
 class SBOLExporter:

@@ -18,11 +18,11 @@ REGULATORY_MAP = get_regulatory_map()
 def refresh():
     reload()
     global BIOMOLECULES, GATES_DB, REPORTERS, ADDITIONAL_PARTS, REGULATORY_MAP
-    BIOMOLECULES = get_biomolecules()
-    GATES_DB = get_gates()
-    REPORTERS = get_reporters()
-    ADDITIONAL_PARTS = get_additional_parts()
-    REGULATORY_MAP = get_regulatory_map()
+    BIOMOLECULES = get_biomolecules()  # pyright: ignore[reportConstantRedefinition]
+    GATES_DB = get_gates()  # pyright: ignore[reportConstantRedefinition]
+    REPORTERS = get_reporters()  # pyright: ignore[reportConstantRedefinition]
+    ADDITIONAL_PARTS = get_additional_parts()  # pyright: ignore[reportConstantRedefinition]
+    REGULATORY_MAP = get_regulatory_map()  # pyright: ignore[reportConstantRedefinition]
 
 
 if __name__ == "__main__":

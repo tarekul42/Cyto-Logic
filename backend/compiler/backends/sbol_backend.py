@@ -1,4 +1,7 @@
+# pyright: reportAttributeAccessIssue=false, reportArgumentType=false, reportOptionalMemberAccess=false
+# sbol2 exposes properties dynamically; its type stubs don't model them.
 import sbol2
+from ..cir import CircuitIR
 from .base import Backend
 from .dna_backend import _get_sequence
 
@@ -11,7 +14,7 @@ class SBOLBackend(Backend):
     def name(self):
         return "SBOL"
 
-    def generate(self, cir, circuit_name="untitled"):
+    def generate(self, cir: CircuitIR, circuit_name="untitled"):  # pyright: ignore[reportIncompatibleMethodOverride]
         sbol2.setHomespace(self._homespace)
         doc = sbol2.Document()
         safe_name = circuit_name.replace(" ", "_")

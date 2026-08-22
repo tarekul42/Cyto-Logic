@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Union
+
+from ..cir import CircuitIR
 
 
 class Backend(ABC):
@@ -9,5 +10,5 @@ class Backend(ABC):
         pass
 
     @abstractmethod
-    def generate(self, cir) -> Union[str, dict]:
+    def generate(self, cir: CircuitIR) -> str | dict:
         pass
