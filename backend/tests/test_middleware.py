@@ -46,6 +46,28 @@ class TestValidateInput:
         errors = validate_input({"parts": list(range(501))})
         assert len(errors) >= 1
 
+    def test_dt_zero_rejected(self):
+        errors = validate_input({"dt": 0})
+        assert any("'dt' must be > 0" in e for e in errors)
+
+    def test_dt_negative_rejected(self):
+        errors = validate_input({"dt": -0.5})
+        assert any("'dt' must be > 0" in e for e in errors)
+
+    def test_dt_within_span_passes(self):
+        assert validate_input({"dt": 0.5, "t_span": [0, 100]}) == []
+
+    def test_dt_exceeding_span_rejected(self):
+        errors = validate_input({"dt": 150, "t_span": [0, 100]})
+        assert any("simulation duration" in e for e in errors)
+
+    def test_dt_without_t_span_passes(self):
+        assert validate_input({"dt": 500}) == []
+
+    def test_invalid_t_span_order_rejected(self):
+        errors = validate_input({"t_span": [10, 5]})
+        assert any("greater than" in e for e in errors)
+
 
 class TestJSONFormatter:
     def test_formatter_outputs_json(self):

@@ -66,6 +66,13 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
         toast("dt must be positive", "error");
         return;
       }
+      if (Number(delta) > 0 && dtVal * Number(delta) > 2) {
+        toast(
+          "Large dt may reduce accuracy — results are computed with internal substepping",
+          "warning",
+          4000,
+        );
+      }
 
       setIsSimulating(true);
       setError(null);
@@ -241,6 +248,17 @@ export default function SimulationPanel({ logic }: SimulationPanelProps) {
       </div>
 
       {error && <ErrorBox>{error}</ErrorBox>}
+
+      {simResult?.warnings && simResult.warnings.length > 0 && (
+        <div className="mb-3 px-2.5 py-2 rounded-md bg-surface border text-[11px] text-text-secondary">
+          {simResult.warnings.map((w, i) => (
+            <div key={i} className="flex items-start gap-1.5">
+              <span aria-hidden="true">{"\u26A0"}</span>
+              <span>{w}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {chartData && chartData.length > 0 && (
         <div className="bg-surface rounded-lg p-2.5">

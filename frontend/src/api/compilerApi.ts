@@ -54,6 +54,7 @@ export interface SimResult {
   trajectories?: Record<string, number[]>;
   species?: string[];
   num_points?: number;
+  warnings?: string[];
 }
 
 export const compileCircuit = async (

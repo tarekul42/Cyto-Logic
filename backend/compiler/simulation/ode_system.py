@@ -38,7 +38,11 @@ class ODESystem:
             if ntype == "input":
                 species.append(label)
                 target = self._inputs.get(label, 1.0)
-                rates[label] = _InputRate(label, target=target)
+                rates[label] = _InputRate(
+                    label,
+                    target=target,
+                    delta=sp_params.get("delta", DEFAULT_DELTA),
+                )
             else:
                 input_labels = [
                     nodes[src]["label"]
@@ -61,6 +65,15 @@ class ODESystem:
     def num_species(self):
         return len(self._species)
 
+    @property
+    def max_decay_rate(self):
+        deltas = [
+            rate.delta
+            for rate in self._rates.values()
+            if getattr(rate, "delta", None) is not None
+        ]
+        return max(deltas, default=DEFAULT_DELTA)
+
     def _idx(self, name):
         return self._species.index(name)
 
@@ -80,15 +93,14 @@ class ODESystem:
 
 
 class _InputRate:
-    def __init__(self, name, target=1.0):
+    def __init__(self, name, target=1.0, delta=DEFAULT_DELTA):
         self._name = name
         self._target = target
+        self.delta = delta
 
     def __call__(self, t, conc):
         current = conc.get(self._name, 0.0)
-        target = self._target
-        delta = DEFAULT_DELTA
-        return degradation(target, delta)
+        return degradation(self._target - current, self.delta)
 
 
 class _GateRate:
@@ -97,6 +109,7 @@ class _GateRate:
         self._gate_type = gate_type
         self._input_labels = input_labels
         self._params = params or {}
+        self.delta = self._params.get("delta", DEFAULT_DELTA)
 
     def _v(self, name, default):
         return self._params.get(name, default)

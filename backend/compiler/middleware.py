@@ -108,6 +108,7 @@ def validate_input(payload):
     errors.extend(_validate_list_field(payload, "parts", 500))
 
     t_span = payload.get("t_span")
+    t_duration = None
     if t_span is not None:
         if not isinstance(t_span, (list, tuple)) or len(t_span) != 2:
             errors.append("'t_span' must be an array of 2 numbers [start, end]")
@@ -115,8 +116,24 @@ def validate_input(payload):
             for i, v in enumerate(t_span):
                 if not isinstance(v, (int, float)):
                     errors.append(f"'t_span[{i}]' must be a number")
+            if not errors and isinstance(t_span[0], (int, float)) \
+                    and isinstance(t_span[1], (int, float)):
+                if t_span[1] <= t_span[0]:
+                    errors.append("'t_span[1]' must be greater than 't_span[0]'")
+                else:
+                    t_duration = t_span[1] - t_span[0]
 
-    errors.extend(_validate_number_field(payload, "dt", lo=0))
+    dt = payload.get("dt")
+    if dt is not None:
+        if not isinstance(dt, (int, float)):
+            errors.append("'dt' must be a number")
+        elif dt <= 0:
+            errors.append("'dt' must be > 0")
+        elif t_duration is not None and dt > t_duration:
+            errors.append(
+                f"'dt' must be <= the simulation duration ({t_duration})"
+            )
+
     errors.extend(_validate_number_field(payload, "pop_size", lo=1, hi=10000))
     errors.extend(_validate_number_field(payload, "generations", lo=1, hi=10000))
     errors.extend(_validate_number_field(payload, "target_output", lo=0))
