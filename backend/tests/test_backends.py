@@ -2,7 +2,7 @@ import pytest
 from compiler.cir import CircuitIR
 from compiler.backends.base import Backend
 from compiler.backends.registry import get, list_backends
-from compiler.backends.simulation_stub import SimulationBackend
+from compiler.backends.simulation_backend import SimulationBackend
 
 
 class TestBackendAbstraction:
@@ -10,11 +10,11 @@ class TestBackendAbstraction:
         with pytest.raises(TypeError):
             Backend()
 
-    def test_simulation_stub_has_name(self):
+    def test_simulation_backend_has_name(self):
         b = SimulationBackend()
         assert b.name == "Simulation"
 
-    def test_simulation_stub_returns_trajectory(self):
+    def test_simulation_backend_returns_trajectory(self):
         ir = CircuitIR(logic_statement="IF aTc -> GFP")
         ir.add_node("n1", "aTc", "input")
         ir.add_node("n2", "GFP", "output")

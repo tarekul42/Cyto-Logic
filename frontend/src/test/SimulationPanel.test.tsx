@@ -52,7 +52,7 @@ describe('SimulationPanel', () => {
     await user.click(screen.getByText('Run Simulation'))
 
     expect(api.simulateCircuit).toHaveBeenCalledWith(
-      'A AND B', {}, [0, 100], 1.0
+      'A AND B', {}, [0, 100], 1.0, { hill_n: 2, kd: 0.01, vmax: 10, delta: 0.5 }
     )
   })
 
@@ -118,7 +118,7 @@ describe('SimulationPanel', () => {
     await user.click(screen.getByText('Run Simulation'))
 
     expect(api.simulateCircuit).toHaveBeenCalledWith(
-      'A AND B', {}, [10, 200], 0.5
+      'A AND B', {}, [10, 200], 0.5, { hill_n: 2, kd: 0.01, vmax: 10, delta: 0.5 }
     )
   })
 })

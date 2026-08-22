@@ -15,8 +15,9 @@ class JSONFormatter(logging.Formatter):
         }
         if record.exc_info and record.exc_info[0]:
             log_entry["exception"] = self.formatException(record.exc_info)
-        if hasattr(record, "request_id"):
-            log_entry["request_id"] = record.request_id
+        request_id = getattr(record, "request_id", None)
+        if request_id is not None:
+            log_entry["request_id"] = request_id
         return json.dumps(log_entry)
 
 
@@ -61,14 +62,35 @@ def rate_limit(f):
     def wrapper(*args, **kwargs):
         client_ip = request.remote_addr or "unknown"
         if not _GLOBAL_LIMITER.is_allowed(client_ip):
-            app = current_app._get_current_object()
-            app.logger.warning("Rate limit exceeded", extra={"request_id": id(request)})
+            current_app.logger.warning("Rate limit exceeded", extra={"request_id": id(request)})
             return jsonify({
                 "success": False,
                 "error": "Rate limit exceeded. Try again later."
             }), 429
         return f(*args, **kwargs)
     return wrapper
+
+
+def _validate_list_field(payload, key, max_items):
+    value = payload.get(key)
+    if value is not None:
+        if not isinstance(value, list):
+            return [f"'{key}' must be an array"]
+        if len(value) > max_items:
+            return [f"'{key}' exceeds {max_items} item limit"]
+    return []
+
+
+def _validate_number_field(payload, key, lo=None, hi=None):
+    value = payload.get(key)
+    if value is not None:
+        if not isinstance(value, (int, float)):
+            return [f"'{key}' must be a number"]
+        if lo is not None and value < lo:
+            return [f"'{key}' must be >= {lo}"]
+        if hi is not None and value > hi:
+            return [f"'{key}' must be <= {hi}"]
+    return []
 
 
 def validate_input(payload):
@@ -80,11 +102,48 @@ def validate_input(payload):
                 errors.append(f"'{key}' must be a string")
             elif len(value) > 10000:
                 errors.append(f"'{key}' exceeds 10000 character limit")
-    for key in ("nodes", "edges", "parts"):
-        value = payload.get(key)
-        if value is not None:
-            if not isinstance(value, list):
-                errors.append(f"'{key}' must be an array")
-            elif len(value) > 500:
-                errors.append(f"'{key}' exceeds 500 item limit")
+
+    errors.extend(_validate_list_field(payload, "nodes", 500))
+    errors.extend(_validate_list_field(payload, "edges", 500))
+    errors.extend(_validate_list_field(payload, "parts", 500))
+
+    t_span = payload.get("t_span")
+    t_duration = None
+    if t_span is not None:
+        if not isinstance(t_span, (list, tuple)) or len(t_span) != 2:
+            errors.append("'t_span' must be an array of 2 numbers [start, end]")
+        else:
+            for i, v in enumerate(t_span):
+                if not isinstance(v, (int, float)):
+                    errors.append(f"'t_span[{i}]' must be a number")
+            if not errors and isinstance(t_span[0], (int, float)) \
+                    and isinstance(t_span[1], (int, float)):
+                if t_span[1] <= t_span[0]:
+                    errors.append("'t_span[1]' must be greater than 't_span[0]'")
+                else:
+                    t_duration = t_span[1] - t_span[0]
+
+    dt = payload.get("dt")
+    if dt is not None:
+        if not isinstance(dt, (int, float)):
+            errors.append("'dt' must be a number")
+        elif dt <= 0:
+            errors.append("'dt' must be > 0")
+        elif t_duration is not None and dt > t_duration:
+            errors.append(
+                f"'dt' must be <= the simulation duration ({t_duration})"
+            )
+
+    errors.extend(_validate_number_field(payload, "pop_size", lo=1, hi=10000))
+    errors.extend(_validate_number_field(payload, "generations", lo=1, hi=10000))
+    errors.extend(_validate_number_field(payload, "target_output", lo=0))
+
+    inputs = payload.get("inputs")
+    if inputs is not None and not isinstance(inputs, dict):
+        errors.append("'inputs' must be an object")
+
+    params = payload.get("params")
+    if params is not None and not isinstance(params, dict):
+        errors.append("'params' must be an object")
+
     return errors

@@ -4,14 +4,19 @@ from .nsga2 import NSGAII
 
 
 class OptimizationResult:
-    def __init__(self, pareto_front, all_populations, species_names):
+    def __init__(
+        self,
+        pareto_front: list[Individual],
+        all_populations: list[list[Individual]],
+        species_names,
+    ) -> None:
         self.pareto_front = pareto_front
         self.all_populations = all_populations
         self.species_names = list(species_names)
         self.pareto_front_size = len(pareto_front)
         self.generations_completed = len(all_populations) - 1
 
-    def pareto_objectives(self):
+    def pareto_objectives(self) -> list[list[float]]:
         return [ind.objectives for ind in self.pareto_front]
 
     def best_params(self):
@@ -21,7 +26,7 @@ class OptimizationResult:
                    key=lambda x: x.objectives[0])
         return self._params_to_dict(best)
 
-    def _params_to_dict(self, ind):
+    def _params_to_dict(self, ind: Individual):
         return [
             {"species": sp, **ind.params_for_species(i)}
             for i, sp in enumerate(self.species_names)

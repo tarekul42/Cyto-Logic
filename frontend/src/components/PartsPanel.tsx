@@ -1,15 +1,15 @@
-import { gateConfig } from '../theme';
-import SectionHeader from './SectionHeader';
+import { gateConfig } from "../theme";
+import SectionHeader from "./SectionHeader";
 
 export default function PartsPanel() {
   const onDragStart = (event: React.DragEvent, type: string) => {
-    event.dataTransfer.setData('application/reactflow', type);
-    event.dataTransfer.effectAllowed = 'move';
-    const el = event.currentTarget as HTMLElement
+    event.dataTransfer.setData("application/reactflow", type);
+    event.dataTransfer.effectAllowed = "move";
+    const el = event.currentTarget as HTMLElement;
     const ghost = el.cloneNode(true) as HTMLElement;
-    ghost.style.position = 'absolute';
-    ghost.style.top = '-9999px';
-    ghost.style.opacity = '0.6';
+    ghost.style.position = "absolute";
+    ghost.style.top = "-9999px";
+    ghost.style.opacity = "0.6";
     document.body.appendChild(ghost);
     event.dataTransfer.setDragImage(ghost, 60, 20);
     setTimeout(() => document.body.removeChild(ghost), 0);
@@ -32,12 +32,48 @@ export default function PartsPanel() {
         >
           <div className="size-3.5 flex items-center justify-center cursor-grab flex-shrink-0">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="4" cy="3" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
-              <circle cx="10" cy="3" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
-              <circle cx="4" cy="7" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
-              <circle cx="10" cy="7" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
-              <circle cx="4" cy="11" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
-              <circle cx="10" cy="11" r="1.5" fill="var(--color-text-tertiary)" opacity="0.6"/>
+              <circle
+                cx="4"
+                cy="3"
+                r="1.5"
+                fill="var(--color-text-tertiary)"
+                opacity="0.6"
+              />
+              <circle
+                cx="10"
+                cy="3"
+                r="1.5"
+                fill="var(--color-text-tertiary)"
+                opacity="0.6"
+              />
+              <circle
+                cx="4"
+                cy="7"
+                r="1.5"
+                fill="var(--color-text-tertiary)"
+                opacity="0.6"
+              />
+              <circle
+                cx="10"
+                cy="7"
+                r="1.5"
+                fill="var(--color-text-tertiary)"
+                opacity="0.6"
+              />
+              <circle
+                cx="4"
+                cy="11"
+                r="1.5"
+                fill="var(--color-text-tertiary)"
+                opacity="0.6"
+              />
+              <circle
+                cx="10"
+                cy="11"
+                r="1.5"
+                fill="var(--color-text-tertiary)"
+                opacity="0.6"
+              />
             </svg>
           </div>
           <span className="text-[10px] font-bold text-text-secondary font-mono uppercase tracking-[1px] w-9">

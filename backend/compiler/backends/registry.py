@@ -1,7 +1,8 @@
 from .sbol_backend import SBOLBackend
-from .simulation_stub import SimulationBackend
+from .simulation_backend import SimulationBackend
 from .dna_backend import DNABackend
 from .svg_backend import SVGBackend
+from .genbank_backend import GenBankBackend
 
 
 _BACKENDS = {}
@@ -23,3 +24,4 @@ register(SBOLBackend())
 register(SimulationBackend())
 register(DNABackend())
 register(SVGBackend())
+register(GenBankBackend())

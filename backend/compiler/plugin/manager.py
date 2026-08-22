@@ -77,7 +77,7 @@ _GLOBAL_MANAGER = None
 def get_manager():
     global _GLOBAL_MANAGER
     if _GLOBAL_MANAGER is None:
-        _GLOBAL_MANAGER = PluginManager()
+        _GLOBAL_MANAGER = PluginManager()  # pyright: ignore[reportConstantRedefinition]
         _GLOBAL_MANAGER.load_builtins()
         _GLOBAL_MANAGER.load_from_env()
     return _GLOBAL_MANAGER
@@ -85,4 +85,4 @@ def get_manager():
 
 def reset_manager():
     global _GLOBAL_MANAGER
-    _GLOBAL_MANAGER = None
+    _GLOBAL_MANAGER = None  # pyright: ignore[reportConstantRedefinition]

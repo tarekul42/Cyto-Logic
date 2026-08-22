@@ -11,11 +11,17 @@ from .models import (
 )
 
 
+def _is_flat(d):
+    return bool(d) and not any(isinstance(v, dict) for v in d.values())
+
+
 class ODESystem:
     def __init__(self, cir, inputs=None, params=None):
         self._cir = cir
         self._inputs = inputs or {}
-        self._params = params or {}
+        raw = params or {}
+        self._global_params = raw if _is_flat(raw) else {}
+        self._per_species_params = raw if not _is_flat(raw) else {}
         self._species, self._rates = self._build()
 
     def _build(self):
@@ -27,12 +33,16 @@ class ODESystem:
         for nid, data in nodes.items():
             label = data["label"]
             ntype = data.get("type", "input")
-            sp_params = self._params.get(label, {})
+            sp_params = {**self._global_params, **self._per_species_params.get(label, {})}
 
             if ntype == "input":
                 species.append(label)
                 target = self._inputs.get(label, 1.0)
-                rates[label] = _InputRate(label, target=target)
+                rates[label] = _InputRate(
+                    label,
+                    target=target,
+                    delta=sp_params.get("delta", DEFAULT_DELTA),
+                )
             else:
                 input_labels = [
                     nodes[src]["label"]
@@ -55,6 +65,15 @@ class ODESystem:
     def num_species(self):
         return len(self._species)
 
+    @property
+    def max_decay_rate(self):
+        deltas = [
+            rate.delta
+            for rate in self._rates.values()
+            if getattr(rate, "delta", None) is not None
+        ]
+        return max(deltas, default=DEFAULT_DELTA)
+
     def _idx(self, name):
         return self._species.index(name)
 
@@ -65,20 +84,23 @@ class ODESystem:
         concentrations = dict(zip(self._species, y))
         dydt = [0.0] * self.num_species
         for name, rate in self._rates.items():
-            dydt[self._idx(name)] = rate(t, concentrations)
+            idx = self._idx(name)
+            dydt[idx] = rate(t, concentrations)
+        for i, name in enumerate(self._species):
+            if y[i] <= 0.0 and dydt[i] < 0.0:
+                dydt[i] = 0.0
         return dydt
 
 
 class _InputRate:
-    def __init__(self, name, target=1.0):
+    def __init__(self, name, target=1.0, delta=DEFAULT_DELTA):
         self._name = name
         self._target = target
+        self.delta = delta
 
     def __call__(self, t, conc):
         current = conc.get(self._name, 0.0)
-        target = self._target
-        delta = DEFAULT_DELTA
-        return degradation(target, delta)
+        return degradation(self._target - current, self.delta)
 
 
 class _GateRate:
@@ -87,11 +109,13 @@ class _GateRate:
         self._gate_type = gate_type
         self._input_labels = input_labels
         self._params = params or {}
+        self.delta = self._params.get("delta", DEFAULT_DELTA)
 
     def _v(self, name, default):
         return self._params.get(name, default)
 
     def __call__(self, t, conc):
+        conc = {k: max(0.0, v) for k, v in conc.items()}
         vmax = self._v("vmax", DEFAULT_VMAX)
         kd = self._v("kd", DEFAULT_KD)
         hn = self._v("hill_n", DEFAULT_HILL_N)
@@ -115,7 +139,7 @@ class _GateRate:
             c2 = conc.get(self._input_labels[1], 0.0) if len(self._input_labels) > 1 else 0.0
             a1 = hill_activator(c1, vmax, kd, hn)
             a2 = hill_activator(c2, vmax, kd, hn)
-            prod = or_combine(a1, a2)
+            prod = or_combine(a1, a2, vmax=vmax)
         elif self._gate_type == "output":
             input_conc = (
                 conc.get(self._input_labels[0], 0.0)
@@ -123,8 +147,27 @@ class _GateRate:
                 else 0.0
             )
             prod = hill_activator(input_conc, vmax, kd, hn)
+        elif self._gate_type in ("NAND", "nand"):
+            input_conc = (
+                conc.get(self._input_labels[0], 0.0)
+                if self._input_labels
+                else 0.0
+            )
+            prod = hill_repressor(input_conc, vmax, kd, hn)
+        elif self._gate_type in ("NOR", "nor"):
+            input_conc = (
+                conc.get(self._input_labels[0], 0.0)
+                if self._input_labels
+                else 0.0
+            )
+            prod = hill_repressor(input_conc, vmax, kd, hn)
         else:
-            prod = 0.0
+            input_conc = (
+                conc.get(self._input_labels[0], 0.0)
+                if self._input_labels
+                else 0.0
+            )
+            prod = hill_activator(input_conc, vmax, kd, hn)
 
         current_conc = conc.get(self._name, 0.0)
         deg = degradation(current_conc, delta)

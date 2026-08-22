@@ -37,7 +37,7 @@ describe('compilerApi', () => {
       mockPost.mockResolvedValue({ data: { success: true, times: [] } })
       const result = await simulateCircuit('A AND B', {}, [0, 50], 0.5)
       expect(axios.post).toHaveBeenCalledWith('/api/simulate', {
-        logic: 'A AND B', inputs: {}, t_span: [0, 50], dt: 0.5,
+        logic: 'A AND B', inputs: {}, t_span: [0, 50], dt: 0.5, params: {},
       }, { timeout: 60000 })
       expect(result.success).toBe(true)
     })
@@ -46,7 +46,7 @@ describe('compilerApi', () => {
       mockPost.mockResolvedValue({ data: { success: true, times: [] } })
       await simulateCircuit('A')
       expect(axios.post).toHaveBeenCalledWith('/api/simulate', {
-        logic: 'A', inputs: {}, t_span: [0, 100], dt: 1.0,
+        logic: 'A', inputs: {}, t_span: [0, 100], dt: 1.0, params: {},
       }, { timeout: 60000 })
     })
   })
